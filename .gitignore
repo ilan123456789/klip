@@ -1,0 +1,13 @@
+# Environment variables & secrets (NEVER commit)
+.env
+.env.*
+!.env.example
+.sessions.enc
+
+# Dependencies & build output
+node_modules/
+dist/
+
+# Local audit & test artifacts
+lighthouse-*.json
+

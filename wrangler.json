@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "klip",
+  "compatibility_date": "2026-11-10",
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "KLIPBASE",
+      "database_name": "klipdatabase",
+      "database_id": "d7a63d25-d614-413a-81bc-cbc8c3ec937b"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "KLIPVIDEOS",
+      "bucket_name": "kli-videos"
+    }
+  ],
+  "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "0d5fb2ccdbc60ef2550a5500b575696f",
+    "CLOUDFLARE_CUSTOMER_SUBDOMAIN": "customer-wmucbvx0oqk5mob1.cloudflarestream.com"
+  }
+}

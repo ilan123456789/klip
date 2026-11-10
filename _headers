@@ -1,0 +1,14 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/api/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Key
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+

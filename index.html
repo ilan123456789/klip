@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Klip — Watch and share kosher Jewish videos, niggunim, and simchas. Join the Jewish video-sharing community." />
+  <meta name="theme-color" content="#0B0E17" />
+  <title>Klip — Kosher Jewish Clips &amp; Simchas</title>
+  <link rel="icon" type="image/png" href="./assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="modulepreload" href="./js/app.js?v=55" />
+  <link rel="modulepreload" href="./js/firebase.js?v=55" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css?v=54" />
+</head>
+
+<body>
+  <div class="web-layout">
+    <!-- ==================== DESKTOP LEFT SIDEBAR ==================== -->
+    <aside class="web-sidebar">
+      <div class="sidebar-brand" id="sidebarBrandBtn" role="button" tabindex="0" aria-label="Klip Home">
+        <div class="sidebar-logo-box">
+          <img src="./assets/klip_logo.png" alt="Klip Logo" />
+        </div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-title">KLIP</span>
+          <span class="sidebar-brand-sub">Kosher Clips &amp; Simchas ✡</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-btn active" data-nav="MainPage" aria-label="For You Feed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5z" />
+          </svg>
+          <span>For You Feed</span>
+        </button>
+
+        <button class="sidebar-nav-btn" data-nav="SearchPage" aria-label="Search &amp; Discover">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M11,4 C7.13,4 4,7.13 4,11 C4,14.87 7.13,18 11,18 C12.7,18 14.26,17.39 15.47,16.39 L19.29,20.21 C19.68,20.6 20.31,20.6 20.7,20.21 C21.09,19.82 21.09,19.19 20.7,18.8 L16.88,14.98 C17.89,13.77 18.5,12.21 18.5,10.5 C18.5,6.91 15.37,4 11,4 Z M11,6 C13.76,6 16,8.24 16,11 C16,13.76 13.76,16 11,16 C8.24,16 6,13.76 6,11 C6,8.24 8.24,6 11,6 Z" />
+          </svg>
+          <span>Search &amp; Discover</span>
+        </button>
+
+        <button class="sidebar-nav-btn" data-nav="CreatePage" aria-label="Post Klip" style="display: none;">
+          <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="24" height="18" rx="6" />
+            <path d="M14 8v8M10 12h8" />
+          </svg>
+          <span>Post Klip</span>
+        </button>
+
+        <button class="sidebar-nav-btn" data-nav="InboxPage" aria-label="Inbox" style="display: none;">
+          <div class="nav-icon-badge-wrap">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20,2 H4 C2.9,2 2,2.9 2,4 V22 L6,18 H20 C21.1,18 22,17.1 22,16 V4 C22,2.9 21.1,2 20,2 Z" />
+            </svg>
+            <span class="inbox-badge-counter" id="sidebarInboxBadge" style="display: none;"></span>
+          </div>
+          <span>Inbox</span>
+        </button>
+
+        <button class="sidebar-nav-btn" data-nav="ProfilePage" aria-label="Profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <!-- View Mode Toggle (App Frame vs Wide Web View) -->
+      <button class="sidebar-nav-btn" id="toggleWideWebBtn" aria-label="Toggle wide web view"
+        style="font-size: 13px; padding: 10px 12px; background-color: #111827; border: 1px solid #1E293B;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M9 4v16" />
+        </svg>
+        <span id="toggleWideWebLabel">Switch to Wide View</span>
+      </button>
+
+      <!-- Current Account Quick Card -->
+      <div class="sidebar-user-card" id="sidebarUserCard" role="button" tabindex="0" aria-label="View account profile">
+        <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+          <span id="sidebarUserInitials">KL</span>
+          <img id="sidebarUserImg" alt="Account profile picture" style="display: none;" />
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebarUserName">Guest</div>
+          <div class="sidebar-user-handle" id="sidebarUserHandle">Tap to Sign In</div>
+        </div>
+      </div>
+
+      <div class="sidebar-shortcuts">
+        <div class="shortcut-row">
+          <span>Next / Prev Klip</span>
+          <span><span class="kbd-pill">↓</span> <span class="kbd-pill">↑</span></span>
+        </div>
+        <div class="shortcut-row">
+          <span>Pause / Play</span>
+          <span class="kbd-pill">Space</span>
+        </div>
+        <div class="shortcut-row">
+          <span>Double-Click</span>
+          <span class="kbd-pill">Shkoyach ♥</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN STAGE ==================== -->
+    <main class="web-stage">
+      <div class="app-shell" id="appShell">
+        <!-- Floating Global Background Upload Progress Banner -->
+        <div class="global-upload-pill" id="globalUploadPill" style="display: none;" role="status" aria-live="polite">
+          <div class="global-upload-pill-icon" id="globalUploadIcon">
+            <div class="spinner-small" id="globalUploadSpinner"></div>
+            <span class="global-upload-done-icon" id="globalUploadDoneIcon" style="display: none;">✓</span>
+            <span class="global-upload-err-icon" id="globalUploadErrIcon" style="display: none;">⚠️</span>
+          </div>
+          <div class="global-upload-pill-content">
+            <div class="global-upload-pill-title" id="globalUploadTitle">Posting Klip...</div>
+            <div class="global-upload-progress-bar-wrap">
+              <div class="global-upload-progress-bar" id="globalUploadProgressBar" style="width: 15%;"></div>
+            </div>
+          </div>
+          <button type="button" class="global-upload-close-btn" id="globalUploadDismissBtn"
+            aria-label="Dismiss upload banner" title="Dismiss">✕</button>
+        </div>
+
+        <div class="pages-viewport">
+
+          <!-- ==================== 1. MAIN PAGE (HOME FEED) ==================== -->
+          <section class="page-view active" id="page-MainPage">
+            <div class="home-root" id="homeRootGrid">
+              <!-- Following Feed Carousel -->
+              <div class="feed-carousel" id="followingCarousel" style="display: none; transform: translateX(-100%);">
+              </div>
+
+              <!-- Female Feed Carousel (Strictly for Female accounts) -->
+              <div class="feed-carousel" id="femaleCarousel" style="display: none; transform: translateX(-100%);"></div>
+
+              <!-- For You Feed Carousel -->
+              <div class="feed-carousel" id="feedCarousel"></div>
+
+              <!-- Empty Feed State -->
+              <div class="empty-feed-container" id="emptyFeedContainer" style="display: none;">
+                <div class="empty-feed-title" id="emptyFeedTitle">No Klips Yet</div>
+                <div class="empty-feed-subtitle" id="emptyFeedSubtitle">Tap Post (+) below to upload the first Klip!
+                </div>
+              </div>
+
+              <!-- Double-Tap Floating Heart -->
+              <div class="double-tap-heart" id="mainDoubleTapHeart" style="display: none;">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z" />
+                </svg>
+              </div>
+
+              <!-- Top Floating Feed Navigation Bar -->
+              <div class="top-feed-navbar">
+                <!-- Left Sound Mute/Unmute Toggle -->
+                <button class="sound-pill-btn" id="soundToggleBtn" title="Toggle Audio" aria-label="Toggle Audio">
+                  <svg id="soundOnIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  </svg>
+                  <svg id="soundOffIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#F87171"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"
+                    aria-hidden="true">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#F87171"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                  </svg>
+                </button>
+
+                <!-- Following | Female (Female accounts only) | For You Tabs -->
+                <div class="top-feed-tabs" id="feedTabsContainer" role="tablist" aria-label="Feed selection">
+                  <div class="feed-tab-cell" id="followingTabCell" role="tab" aria-selected="false" tabindex="0">
+                    <span class="feed-tab-label" id="followingTabLabel">Following</span>
+                  </div>
+                  <div class="feed-tab-cell" id="femaleTabCell" role="tab" aria-selected="false" tabindex="0"
+                    style="display: none;">
+                    <span class="feed-tab-label" id="femaleTabLabel">Female</span>
+                  </div>
+                  <div class="feed-tab-cell" id="forYouTabCell" role="tab" aria-selected="true" tabindex="0">
+                    <span class="feed-tab-label active" id="forYouTabLabel">For You</span>
+                  </div>
+                  <div class="feed-tab-indicator" id="feedTabIndicator"></div>
+                </div>
+
+                <!-- Right Search Icon -->
+                <button class="top-icon-btn" id="mainSearchBtn" title="Search" aria-label="Search">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="white" aria-hidden="true">
+                    <path
+                      d="M11,4 C7.13,4 4,7.13 4,11 C4,14.87 7.13,18 11,18 C12.7,18 14.26,17.39 15.47,16.39 L19.29,20.21 C19.68,20.6 20.31,20.6 20.7,20.21 C21.09,19.82 21.09,19.19 20.7,18.8 L16.88,14.98 C17.89,13.77 18.5,12.21 18.5,10.5 C18.5,6.91 15.37,4 11,4 Z M11,6 C13.76,6 16,8.24 16,11 C16,13.76 13.76,16 11,16 C8.24,16 6,13.76 6,11 C6,8.24 8.24,6 11,6 Z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== 2. CREATE / POST PAGE ==================== -->
+          <section class="page-view" id="page-CreatePage">
+            <!-- View 1: Locked Posting View (CanPost == false) -->
+            <div class="locked-posting-view" id="lockedPostingView">
+              <div class="locked-icon-circle">
+                <svg viewBox="0 0 24 24" width="30" height="30" fill="#38BDF8">
+                  <path
+                    d="M17,9 H16 V7 C16,4.79 14.21,3 12,3 C9.79,3 8,4.79 8,7 V9 H7 C5.9,9 5,9.9 5,11 V19 C5,20.1 5.9,21 7,21 H17 C18.1,21 19,20.1 19,19 V11 C19,9.9 18.1,9 17,9 Z M10,7 C10,5.9 10.9,5 12,5 C13.1,5 14,5.9 14,7 V9 H10 V7 Z" />
+                </svg>
+              </div>
+              <div class="locked-title">Creator Approval Required</div>
+              <div class="locked-desc">
+                To keep Klip kosher and curated, posting is limited to approved creators. Please contact me on WhatsApp at <a href="https://wa.me/19024490799" target="_blank" rel="noopener noreferrer" style="color: #25D366; font-weight: 700; text-decoration: underline;">+1 902 449 0799</a> to ask for approval.
+              </div>
+              <div class="account-handle-badge" id="accountHandleBadge">Your account: @user</div>
+              <a href="https://wa.me/19024490799" target="_blank" rel="noopener noreferrer" class="primary-btn" style="background-color: #25D366; color: #FFFFFF; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 12px; margin-top: 6px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c4.54 0 8.24 3.7 8.24 8.24 0 2.2-.86 4.28-2.42 5.83a8.18 8.18 0 0 1-5.82 2.41c-1.45 0-2.88-.38-4.14-1.12l-.3-.18-3.08.81.82-3-.19-.31a8.21 8.21 0 0 1-1.26-4.44c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.25-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.17 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.19-.48-.31"/>
+                </svg>
+                Contact on WhatsApp (+1 902 449 0799)
+              </a>
+              <button class="secondary-btn" id="refreshApprovalBtn" style="margin-top: 6px;">Check Approval Status</button>
+            </div>
+
+            <!-- View 2: Studio Upload Form (CanPost == true) -->
+            <div class="upload-form-grid" id="uploadFormGrid" style="display: none;">
+              <div class="studio-header">
+                <div class="creator-handle-chip" id="creatorHandleChip">@creator</div>
+                <div class="studio-title">New Klip</div>
+                <div class="reset-media-btn" id="clearMediaBtn" style="display: none;">Reset</div>
+              </div>
+
+              <!-- Post Mode Switcher -->
+              <div class="segmented-switcher">
+                <button class="segment-btn active-blue" id="videoModeTabBtn">🎬 Video Klip</button>
+                <button class="segment-btn" id="photoModeTabBtn">📷 Photo Slideshow</button>
+              </div>
+
+              <!-- Scrollable Studio Body -->
+              <div class="studio-scroll-body">
+                <div class="media-stage-card">
+                  <!-- Hidden Native File Inputs -->
+                  <input type="file" id="videoFileInput" accept="video/mp4,video/quicktime,video/webm,video/*"
+                    style="display: none;" />
+                  <input type="file" id="photoFilesInput" accept="image/*" multiple style="display: none;" />
+
+                  <!-- VIDEO STAGE -->
+                  <div id="videoStageGroup" style="width: 100%; height: 100%; position: relative;">
+                    <div class="empty-picker-prompt" id="emptyVideoPromptView">
+                      <div class="picker-icon-circle">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#38BDF8" stroke-width="2.2"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path
+                            d="M12,16 V4 M12,4 L7,9 M12,4 L17,9 M4,17 V19 C4,20.1 4.9,21 6,21 H18 C19.1,21 20,20.1 20,19 V17" />
+                        </svg>
+                      </div>
+                      <div class="picker-title">Select a Video to Upload</div>
+                      <div class="picker-subtitle">Tap to pick an MP4 or MOV clip from your device</div>
+                      <div class="picker-cta-pill">Choose Video</div>
+                    </div>
+
+                    <div class="media-preview-container" id="videoPreviewContainer" style="display: none;">
+                      <video id="previewVideoPlayer" class="klip-video-element" loop playsinline
+                        style="pointer-events: auto; cursor: pointer;"></video>
+                      <div class="bottom-scrim" style="height: 84px;"></div>
+
+                      <div class="center-play-indicator" id="previewPausedOverlay"
+                        style="display: none; width: 58px; height: 58px;">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M8,5 V19 L19,12 Z" />
+                        </svg>
+                      </div>
+
+                      <button class="preview-floating-btn right" id="changeVideoBtn">Change Video</button>
+
+                      <div class="preview-ready-bar">
+                        <span class="ready-badge">READY</span>
+                        <span class="ready-filename" id="selectedFileLabel">video.mp4</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- PHOTO SLIDESHOW STAGE -->
+                  <div id="photoStageGroup" style="width: 100%; height: 100%; position: relative; display: none;">
+                    <div class="empty-picker-prompt" id="emptyPhotoPromptView">
+                      <div class="picker-icon-circle purple">📷</div>
+                      <div class="picker-title">Create a Photo Slideshow</div>
+                      <div class="picker-subtitle">Select 1 or multiple photos so viewers can swipe through them like
+                        TikTok</div>
+                      <div class="picker-cta-pill purple">Select Photos</div>
+                    </div>
+
+                    <div class="media-preview-container" id="photoPreviewContainer" style="display: none;">
+                      <div class="photo-carousel-track" id="previewPhotoCarousel"></div>
+                      <div class="bottom-scrim" style="height: 84px;"></div>
+
+                      <button class="preview-floating-btn left-danger" id="removeCurrentPhotoBtn">✕ Remove</button>
+                      <button class="preview-floating-btn right purple-stroke" id="addMorePhotosBtn">+ Add
+                        Photos</button>
+
+                      <div class="photo-counter-pill" id="previewPhotoCounterBorder"
+                        style="top: 48px; right: 12px; display: none;">
+                        <span id="photoCountSummaryLabel">1/2</span>
+                      </div>
+
+                      <div class="photo-dots-row" id="previewPhotoIndicator" style="bottom: 12px; display: none;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SOUND SELECTION BAR & TRIMMER -->
+                <div class="create-sound-panel" id="createSoundPanel">
+                  <div class="create-sound-header" id="openSoundPickerBtn">
+                    <div class="create-sound-left">
+                      <div class="create-sound-icon-circle">♫</div>
+                      <div class="create-sound-info">
+                        <span class="create-sound-label" id="createSoundLabel">Add Sound</span>
+                        <span class="create-sound-sub" id="createSoundSub">Choose from audios or upload</span>
+                      </div>
+                    </div>
+                    <div class="create-sound-right">
+                      <button type="button" class="create-sound-trim-trigger-btn" id="openTrimmerModalBtn"
+                        style="display: none;">✂ Trim</button>
+                      <span class="create-sound-cta" id="createSoundActionText">Select</span>
+                      <button type="button" class="create-sound-remove-btn" id="removeSelectedSoundBtn"
+                        style="display: none;" title="Remove sound">✕</button>
+                    </div>
+                  </div>
+
+                  <!-- Name audio for this post (Only visible when audio is selected) -->
+                  <div class="field-group" id="postAudioNameGroup"
+                    style="padding: 0 14px 10px 14px; margin-top: -2px; display: none;">
+                    <label class="field-label" style="font-size: 11px;">NAME AUDIO (OPTIONAL)</label>
+                    <input type="text" class="input-box" id="postAudioNameInput"
+                      placeholder="Name your audio (e.g. My Niggun)..." maxlength="60"
+                      style="height: 38px; font-size: 13px;" />
+                  </div>
+                </div>
+
+                <!-- Caption & Quick Hashtags Card -->
+                <div class="caption-card">
+                  <div class="caption-header-row">
+                    <span class="caption-header-title">CAPTION &amp; HASHTAGS</span>
+                    <span class="caption-counter" id="captionCountLabel">0 / 150</span>
+                  </div>
+                  <textarea class="caption-editor" id="captionEditor" maxlength="150"
+                    placeholder="Describe your Klip and add #hashtags..."></textarea>
+                  <div class="hashtag-chips-row">
+                    <button class="hashtag-chip" data-tag="#Shabbat">#Shabbat</button>
+                    <button class="hashtag-chip" data-tag="#Simcha">#Simcha</button>
+                    <button class="hashtag-chip" data-tag="#Chasunah">#Chasunah</button>
+                    <button class="hashtag-chip" data-tag="#Niggun">#Niggun</button>
+                    <button class="hashtag-chip" data-tag="#Torah">#Torah</button>
+                    <button class="hashtag-chip" data-tag="#Kosher">#Kosher</button>
+                  </div>
+                </div>
+
+                <!-- Status Banner -->
+                <div class="status-banner" id="uploadStatusBanner" style="display: none;">
+                  <div class="spinner" id="uploadSpinner" style="display: none;"></div>
+                  <span id="uploadStatusLabel" style="color: #38BDF8;">Uploading...</span>
+                </div>
+              </div>
+
+              <!-- Bottom Post Button -->
+              <button class="primary-action-btn" id="postKlipBtn">Post Video Klip</button>
+            </div>
+          </section>
+
+          <!-- ==================== 3. PROFILE PAGE ==================== -->
+          <section class="page-view" id="page-ProfilePage">
+            <!-- Guest View: Sign Up / Log In -->
+            <div class="page-scroll" id="guestAuthView">
+              <div class="guest-auth-container">
+                <div class="auth-brand-header">
+                  <div class="auth-logo-card">
+                    <img src="./assets/klip_logo.png" alt="Klip" />
+                  </div>
+                  <div class="auth-subtitle" id="authSubtitleLabel">
+                    Join the community to follow creators &amp; save Klips
+                  </div>
+                </div>
+
+                <!-- Segmented Switcher: Sign Up | Log In -->
+                <div class="segmented-switcher">
+                  <button type="button" class="segment-btn active-blue" id="signUpSegmentBtn">Sign Up</button>
+                  <button type="button" class="segment-btn" id="logInSegmentBtn">Log In</button>
+                </div>
+
+                <form class="auth-form-card" id="authForm">
+                  <!-- Sign Up Only Fields -->
+                  <div id="signUpFieldsContainer" style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="field-group">
+                      <label class="field-label">USERNAME</label>
+                      <input type="text" class="input-box" id="authHandleInput" placeholder="@username"
+                        autocomplete="username" />
+                    </div>
+
+                    <div class="field-group">
+                      <label class="field-label">DISPLAY NAME</label>
+                      <input type="text" class="input-box" id="authDisplayNameInput" placeholder="Your name"
+                        autocomplete="name" />
+                    </div>
+
+                    <div class="field-group">
+                      <label class="field-label">GENDER</label>
+                      <div class="gender-grid">
+                        <div class="gender-option selected" id="maleGenderBtn">Male</div>
+                        <div class="gender-option" id="femaleGenderBtn">Female</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">EMAIL</label>
+                    <input type="email" class="input-box" id="authEmailInput" placeholder="you@example.com"
+                      autocomplete="email" required />
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">PASSWORD</label>
+                    <input type="password" class="input-box" id="authPasswordInput" placeholder="At least 6 characters"
+                      autocomplete="current-password" required />
+                  </div>
+
+                  <div class="error-text" id="authErrorLabel" style="display: none;"></div>
+
+                  <button type="submit" class="primary-action-btn" id="authSubmitBtn"
+                    style="height: 50px; margin-top: 6px;">
+                    Create Account
+                  </button>
+
+                  <div style="display: flex; justify-content: center;">
+                    <div class="spinner" id="authLoadingSpinner" style="display: none;"></div>
+                  </div>
+
+                  <div id="authToggleFooter" style="text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none;">
+                    Already have an account? <span style="color: var(--accent-blue); font-weight: 600; text-decoration: underline;">Log In</span>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Logged-In Profile View -->
+            <div class="page-scroll" id="loggedInProfileView" style="display: none;">
+              <div class="profile-content">
+                <div class="profile-top-bar">
+                  <button class="top-icon-btn" id="profileInboxBtn" title="Inbox" aria-label="Inbox"
+                    style="display: none; position: relative;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="white" aria-hidden="true">
+                      <path
+                        d="M20,2 H4 C2.9,2 2,2.9 2,4 V22 L6,18 H20 C21.1,18 22,17.1 22,16 V4 C22,2.9 21.1,2 20,2 Z" />
+                    </svg>
+                    <span class="inbox-badge-counter profile-inbox-badge" id="profileInboxBadge"
+                      style="display: none;"></span>
+                  </button>
+                  <div class="profile-handle-header" id="profileHandleHeader">@user</div>
+                  <div class="logout-link" id="profileLogoutBtn" role="button" tabindex="0">Log out</div>
+                </div>
+
+                <div class="profile-hero">
+                  <div class="profile-avatar-large">
+                    <img id="profileAvatarImg" alt="" style="display: none;" />
+                    <span class="profile-avatar-initials" id="profileInitialsLabel">KL</span>
+                  </div>
+                  <div class="profile-display-name" id="profileDisplayNameLabel">Klip Creator</div>
+                  <div class="profile-bio" id="profileBioLabel">Sharing Jewish life &amp; simchas on Klip ✡</div>
+                </div>
+
+                <div class="profile-stats-row">
+                  <div class="stat-item" id="profileFollowingStat">
+                    <span class="stat-value" id="profileFollowingCount">0</span>
+                    <span class="stat-label">Following</span>
+                  </div>
+                  <div class="stat-item" id="profileFollowersStat">
+                    <span class="stat-value" id="profileFollowersCount">0</span>
+                    <span class="stat-label">Followers</span>
+                  </div>
+                  <div class="stat-item" style="cursor: default;">
+                    <span class="stat-value" id="profileShkoyachCount">0</span>
+                    <span class="stat-label">Shkoyach</span>
+                  </div>
+                </div>
+
+                <div class="profile-actions-row">
+                  <button class="profile-btn" id="openEditProfileBtn">Edit Profile</button>
+                  <button class="profile-btn" id="shareOwnProfileBtn">Share Profile</button>
+                </div>
+
+                <!-- Tabs: Klips | Saved -->
+                <div class="profile-tabs-grid">
+                  <div class="profile-tab-col active" id="myKlipsTabCol">
+                    <span class="profile-tab-text">Klips</span>
+                    <div class="profile-tab-line"></div>
+                  </div>
+                  <div class="profile-tab-col" id="savedKlipsTabCol">
+                    <span class="profile-tab-text">Saved</span>
+                    <div class="profile-tab-line"></div>
+                  </div>
+                </div>
+
+                <div class="empty-state-text" id="emptyProfileKlipsLabel">No Klips yet</div>
+                <div class="klips-grid-3col" id="profileKlipsGrid"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: CREATOR PROFILE ==================== -->
+          <section class="page-view subpage" id="page-CreatorProfilePage">
+            <div class="page-scroll">
+              <div class="profile-content">
+                <div class="subpage-header">
+                  <button class="top-icon-btn" data-back aria-label="Go back">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M15,18 L9,12 L15,6" />
+                    </svg>
+                  </button>
+                  <div class="profile-handle-header" id="creatorHandleHeader">@creator</div>
+                  <div></div>
+                </div>
+
+                <div class="profile-hero">
+                  <div class="profile-avatar-large">
+                    <img id="creatorAvatarImg" alt="" style="display: none;" />
+                    <span class="profile-avatar-initials" id="creatorInitialsLabel">KL</span>
+                  </div>
+                  <div class="profile-display-name" id="creatorDisplayNameLabel">Creator</div>
+                  <div class="profile-bio" id="creatorBioLabel">Sharing Jewish life &amp; simchas on Klip ✡</div>
+                </div>
+
+                <div class="profile-stats-row">
+                  <div class="stat-item" id="creatorFollowingStat">
+                    <span class="stat-value" id="creatorFollowingCount">0</span>
+                    <span class="stat-label">Following</span>
+                  </div>
+                  <div class="stat-item" id="creatorFollowersStat">
+                    <span class="stat-value" id="creatorFollowersCount">0</span>
+                    <span class="stat-label">Followers</span>
+                  </div>
+                  <div class="stat-item" style="cursor: default;">
+                    <span class="stat-value" id="creatorShkoyachCount">0</span>
+                    <span class="stat-label">Shkoyach</span>
+                  </div>
+                </div>
+
+                <button class="follow-action-btn" id="creatorFollowActionBtn">Follow</button>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+                  <span style="color: white; font-weight: 700; text-align: center; font-size: 14px;">Klips</span>
+                  <div style="height: 2px; background-color: white;"></div>
+                </div>
+
+                <div class="empty-state-text" id="emptyCreatorKlipsLabel" style="display: none;">No Klips posted yet
+                </div>
+                <div class="klips-grid-3col" id="creatorKlipsGrid"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: EDIT PROFILE ==================== -->
+          <section class="page-view subpage" id="page-EditProfilePage">
+            <div class="page-scroll">
+              <div class="profile-content" style="padding: 20px 20px 28px; gap: 20px;">
+                <div class="subpage-header">
+                  <button class="top-icon-btn" id="editProfileBackBtn" aria-label="Go back">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M15,18 L9,12 L15,6" />
+                    </svg>
+                  </button>
+                  <div class="subpage-title">Edit Profile</div>
+                  <div></div>
+                </div>
+
+                <!-- Avatar Section (Change Photo button ONLY visible for Male accounts) -->
+                <div class="profile-hero" style="margin-top: 6px;">
+                  <div class="profile-avatar-large" style="width: 92px; height: 92px; border-radius: 46px;">
+                    <img id="editAvatarPreviewImg" alt="" style="display: none;" />
+                    <span class="profile-avatar-initials" id="editAvatarInitialsLabel"
+                      style="font-size: 30px;">KL</span>
+                  </div>
+                  <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" />
+                  <button class="profile-btn" id="changePhotoBtn"
+                    style="color: #38BDF8; border-radius: 10px; padding: 8px 18px; display: none;">
+                    Change Profile Picture
+                  </button>
+                </div>
+
+                <!-- Username -->
+                <div class="field-group" style="gap: 6px;">
+                  <label class="field-label" style="font-size: 12px; letter-spacing: 0;">Username</label>
+                  <input type="text" class="input-box" id="editHandleEntry" placeholder="@username"
+                    style="background-color: #111827;" />
+                </div>
+
+                <!-- Display Name -->
+                <div class="field-group" style="gap: 6px;">
+                  <label class="field-label" style="font-size: 12px; letter-spacing: 0;">Display Name</label>
+                  <input type="text" class="input-box" id="editDisplayNameEntry" placeholder="Display Name"
+                    style="background-color: #111827;" />
+                </div>
+
+                <!-- Bio Section (Only editable if CanPost == true) -->
+                <div class="field-group" style="gap: 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="field-label" style="font-size: 12px; letter-spacing: 0;">Bio</label>
+                    <span id="editBioLockBadge" style="color: #64748B; font-size: 11px;">🔒 Approved Creators
+                      Only</span>
+                  </div>
+                  <textarea class="input-box" id="editBioEditor" maxlength="90"
+                    style="background-color: #111827; height: 76px; resize: none; font-size: 14px;" disabled></textarea>
+                  <span id="editBioHintLabel" style="color: #64748B; font-size: 12px;">
+                    Your bio can only be customized once your account is approved to upload videos.
+                  </span>
+                </div>
+
+                <div id="editStatusLabel"
+                  style="color: #38BDF8; font-size: 13px; text-align: center; font-weight: 600; display: none;"></div>
+
+                <button class="primary-action-btn" id="saveProfileBtn" style="height: 50px; margin-top: 8px;">Save
+                  Changes</button>
+              </div>
+            </div>
+
+            <!-- Interactive Profile Picture Crop Modal Overlay -->
+            <div class="crop-modal-overlay" id="cropModalOverlay" style="display: none;">
+              <div style="text-align: center; display: flex; flex-direction: column; gap: 4px;">
+                <div style="color: white; font-size: 20px; font-weight: 700;">Crop Profile Picture</div>
+                <div style="color: #94A3B8; font-size: 13px;">Drag to position • Scroll or slide to zoom</div>
+              </div>
+
+              <div class="crop-viewport-touch" id="cropTouchArea">
+                <div class="crop-circle-frame">
+                  <img id="cropTargetImage" class="crop-target-img" alt="Crop target" />
+                </div>
+              </div>
+
+              <div class="crop-controls-card">
+                <div class="zoom-slider-row">
+                  <span style="color: #CBD5E1; font-size: 13px; font-weight: 700;">Zoom</span>
+                  <input type="range" class="zoom-slider" id="cropZoomSlider" min="1" max="3.5" step="0.02" value="1" />
+                  <span id="cropZoomValueLabel"
+                    style="color: #38BDF8; font-size: 12px; font-weight: 700; text-align: right;">1.0x</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <button class="profile-btn" id="rotateCropBtn" style="height: 38px; border-radius: 10px;">↻ Rotate
+                    90°</button>
+                  <button class="profile-btn" id="resetCropBtn"
+                    style="height: 38px; border-radius: 10px; color: #94A3B8;">Reset</button>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
+                <button class="profile-btn" id="cancelCropBtn"
+                  style="height: 48px; border-radius: 12px; font-size: 15px; color: #CBD5E1;">Cancel</button>
+                <button class="primary-action-btn" id="confirmCropBtn"
+                  style="height: 48px; border-radius: 12px; font-size: 15px;">Use Photo</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: FOLLOW LIST ==================== -->
+          <section class="page-view subpage" id="page-FollowListPage">
+            <div style="display: flex; flex-direction: column; padding: 20px 16px 16px; gap: 16px; height: 100%;">
+              <div class="subpage-header">
+                <button class="top-icon-btn" data-back aria-label="Go back">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15,18 L9,12 L15,6" />
+                  </svg>
+                </button>
+                <div class="subpage-title" id="followListTitleLabel">Following</div>
+                <div></div>
+              </div>
+
+              <div class="empty-state-text" id="followListEmptyLabel" style="display: none; margin: auto;">No users yet
+              </div>
+              <div class="page-scroll">
+                <div class="user-list-stack" id="followListContainer"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: INBOX ==================== -->
+          <section class="page-view" id="page-InboxPage">
+            <div style="display: flex; flex-direction: column; padding: 20px 16px 24px; gap: 18px; height: 100%;">
+              <div class="subpage-header">
+                <button class="top-icon-btn nav-back-btn" data-back aria-label="Go back">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15,18 L9,12 L15,6" />
+                  </svg>
+                </button>
+                <div class="subpage-title">Inbox</div>
+                <div style="width: 36px;"></div>
+              </div>
+
+              <div class="empty-state-text" id="emptyInboxLabel" style="margin: auto;">No activity yet</div>
+              <div class="page-scroll" id="inboxListScroll" style="display: none;">
+                <div class="user-list-stack" id="notificationsList"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: SEARCH / DISCOVER ==================== -->
+          <section class="page-view" id="page-SearchPage">
+            <div class="search-page-layout">
+              <div class="search-top-row">
+                <button class="top-icon-btn nav-back-btn" data-back aria-label="Go back">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15,18 L9,12 L15,6" />
+                  </svg>
+                </button>
+                <div class="search-input-wrap">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#94A3B8" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="text" class="search-input" id="searchEntry"
+                    placeholder="Search accounts, Klips, #hashtags..."
+                    aria-label="Search accounts, Klips, and hashtags" />
+                  <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear search input"
+                    style="display: none;">✕</button>
+                </div>
+              </div>
+
+              <div class="search-filter-tabs">
+                <div class="search-filter-pill active" id="searchTabAll">All</div>
+                <div class="search-filter-pill" id="searchTabAccounts">Accounts</div>
+                <div class="search-filter-pill" id="searchTabKlips">Klips</div>
+              </div>
+
+              <div class="empty-state-text" id="emptySearchLabel" style="display: none; margin: auto;">
+                No matching results found
+              </div>
+
+              <div class="search-results-scroll" id="searchResultsContainer">
+                <!-- Matching Accounts Section -->
+                <div id="searchAccountsSection" style="display: none;">
+                  <div class="section-label" id="searchAccountsHeader">Accounts</div>
+                  <div class="user-list-stack" id="searchAccountsList"></div>
+                </div>
+
+                <!-- Matching Klips Section -->
+                <div id="searchKlipsSection" style="display: none;">
+                  <div class="section-label" id="searchKlipsHeader" style="display: none;">Klips</div>
+                  <div class="klips-grid-3col" id="searchResultsGrid"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: VIDEO DETAIL PLAYLIST ==================== -->
+          <section class="page-view subpage detail-mode" id="page-VideoDetailPage">
+            <div class="home-root" id="detailRootGrid">
+              <div class="feed-carousel" id="detailFeedCarousel"></div>
+
+              <!-- Double-Tap Floating Heart -->
+              <div class="double-tap-heart" id="detailDoubleTapHeart" style="display: none;">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z" />
+                </svg>
+              </div>
+
+              <!-- Top-Left Back Button -->
+              <button class="detail-back-btn" id="detailBackBtn" aria-label="Go back to feed">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.4"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15,18 L9,12 L15,6" />
+                </svg>
+              </button>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: SOUND DETAIL ==================== -->
+          <section class="page-view subpage" id="page-SoundDetailPage">
+            <div class="subpage-root sound-detail-root">
+              <div class="subpage-header sound-detail-header">
+                <button class="subpage-back-btn" id="soundDetailBackBtn" aria-label="Back">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15,18 L9,12 L15,6" />
+                  </svg>
+                </button>
+                <div class="subpage-title sound-detail-nav-title" id="soundDetailNavTitle">Sound</div>
+                <button class="subpage-action-btn" id="soundDetailShareBtn" aria-label="Share Sound"
+                  title="Share Sound">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="sound-detail-scroll-body">
+                <!-- HERO: Rotating Vinyl Disc, Title, Creator, Count -->
+                <div class="sound-hero-card">
+                  <div class="sound-disc-wrap" id="soundDiscBtn" title="Tap to listen">
+                    <div class="sound-disc-vinyl" id="soundDiscVinyl">
+                      <div class="sound-disc-groove"></div>
+                      <div class="sound-disc-center">
+                        <span class="sound-disc-note">♫</span>
+                      </div>
+                    </div>
+                    <div class="sound-disc-play-icon" id="soundDiscPlayIcon">
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
+                        <path d="M8,5 V19 L19,12 Z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="sound-hero-meta">
+                    <div class="sound-hero-title-row">
+                      <div class="sound-hero-title" id="soundHeroTitle">Original Sound</div>
+                      <button type="button" class="sound-hero-rename-btn" id="soundHeroRenameBtn" style="display: none;"
+                        title="Rename Audio">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                        <span>Rename</span>
+                      </button>
+                    </div>
+                    <div class="sound-hero-creator" id="soundHeroCreator">@creator</div>
+                    <div class="sound-hero-count" id="soundHeroCount">0 videos</div>
+                  </div>
+                </div>
+
+                <!-- Hidden audio preview player -->
+                <audio id="soundDetailAudio" preload="none"></audio>
+
+                <!-- Section Heading -->
+                <div class="sound-grid-header">
+                  <span class="sound-grid-header-title">Videos</span>
+                  <span class="sound-grid-header-pill" id="soundGridVideosCountPill">0</span>
+                </div>
+
+                <!-- 3-Column Videos Grid -->
+                <div class="klips-grid-3col sound-videos-grid" id="soundVideosGrid"></div>
+
+                <!-- Empty State -->
+                <div class="sound-empty-state" id="soundEmptyState" style="display: none;">
+                  <span class="sound-empty-icon">🎬</span>
+                  <span class="sound-empty-title">No videos yet</span>
+                  <span class="sound-empty-sub">Be the first to create a Klip with this sound!</span>
+                </div>
+              </div>
+
+              <!-- Floating "Use this sound" button (bottom center) -->
+              <div class="sound-floating-bottom">
+                <button class="sound-use-floating-btn" id="useThisSoundBtn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path
+                      d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+                  </svg>
+                  <span>Use this sound</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== LAUNCH SPLASH OVERLAY ==================== -->
+          <div class="launch-splash-overlay" id="launchSplashOverlay">
+            <div class="launch-logo-card" id="launchLogoCard">
+              <img src="./assets/klip_logo.png" alt="Klip" />
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== BOTTOM TAB BAR (AppShell.xaml) ==================== -->
+        <nav class="bottom-tabbar" id="bottomTabBar" style="opacity: 0;" aria-label="Bottom Navigation">
+          <button class="tabbar-item active" data-tab="MainPage" aria-label="Home Feed">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5z" />
+            </svg>
+            <span>Home</span>
+          </button>
+
+          <button class="tabbar-item" data-tab="SearchPage" aria-label="Discover">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>Discover</span>
+          </button>
+
+          <button class="tabbar-item" data-tab="CreatePage" aria-label="Post Klip" style="display: none;">
+            <svg viewBox="0 0 28 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <rect x="2" y="3" width="24" height="18" rx="6" />
+              <path d="M14 8v8M10 12h8" />
+            </svg>
+            <span>Post</span>
+          </button>
+
+          <button class="tabbar-item" data-tab="InboxPage" aria-label="Inbox" style="display: none;">
+            <div class="tabbar-icon-badge-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span class="inbox-badge-counter" id="tabbarInboxBadge" style="display: none;"></span>
+            </div>
+            <span>Inbox</span>
+          </button>
+
+          <button class="tabbar-item" data-tab="ProfilePage" aria-label="Profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+            <span>Profile</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Desktop Up/Down Feed Scroll Buttons -->
+      <div class="desktop-feed-arrows">
+        <button class="feed-arrow-btn" id="scrollPrevKlipBtn" title="Previous Klip (↑)" aria-label="Previous Klip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 15l-6-6-6 6" />
+          </svg>
+        </button>
+        <button class="feed-arrow-btn" id="scrollNextKlipBtn" title="Next Klip (↓)" aria-label="Next Klip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Share & Download Modal Sheet -->
+  <div class="confirm-dialog-backdrop share-backdrop" id="shareModalDialog" style="display: none;">
+    <div class="confirm-dialog-card share-sheet-card">
+      <div class="share-drag-handle"></div>
+
+      <div class="share-sheet-top">
+        <div class="share-sheet-info">
+          <div class="share-sheet-title" id="shareSheetTitle">Share Klip</div>
+          <div class="share-sheet-sub" id="shareSheetSubtitle">by @creator</div>
+        </div>
+        <button class="top-icon-btn close-modal-btn" id="closeShareModalBtn" aria-label="Close share sheet">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="share-actions-row">
+        <!-- Download Video Button -->
+        <button class="share-pill-btn download-pill" id="shareDownloadBtn">
+          <div class="share-pill-icon-circle download-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <span class="share-pill-label" id="shareDownloadLabel">Download</span>
+        </button>
+
+        <!-- Copy Link Button -->
+        <button class="share-pill-btn" id="shareCopyLinkBtn">
+          <div class="share-pill-icon-circle link-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+          </div>
+          <span class="share-pill-label">Copy Link</span>
+        </button>
+
+        <!-- WhatsApp / Quick Share Button -->
+        <button class="share-pill-btn" id="shareWhatsAppBtn">
+          <div class="share-pill-icon-circle whatsapp-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+          </div>
+          <span class="share-pill-label">WhatsApp</span>
+        </button>
+
+        <!-- Native Share Sheet Button -->
+        <button class="share-pill-btn" id="shareSystemBtn">
+          <div class="share-pill-icon-circle more-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="19" cy="12" r="1.5" />
+              <circle cx="5" cy="12" r="1.5" />
+            </svg>
+          </div>
+          <span class="share-pill-label">More</span>
+        </button>
+      </div>
+
+      <div class="share-download-status" id="shareDownloadProgress" style="display: none;">
+        <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+        <span id="shareDownloadStatusText">Downloading video...</span>
+      </div>
+
+      <button class="share-cancel-btn" id="shareCancelBottomBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ==================== COMMENTS BOTTOM SHEET MODAL ==================== -->
+  <div class="comments-modal-backdrop" id="commentModalOverlay" style="display: none;" aria-hidden="true">
+    <div class="comments-modal-card" id="commentModalCard">
+      <!-- Top Grab Handle & Header -->
+      <div class="comments-modal-top">
+        <div class="comments-drag-handle"></div>
+        <div class="comments-header-row">
+          <div class="comments-modal-title" id="commentModalTitle">Comments</div>
+          <button class="comments-close-btn" id="closeCommentsModalBtn" aria-label="Close Comments">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M19,6.41 L17.59,5 L12,10.59 L6.41,5 L5,6.41 L10.59,12 L5,17.59 L6.41,19 L12,13.41 L17.59,19 L19,17.59 L13.41,12 Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Comments List / Loading / Empty State -->
+      <div class="comments-body">
+        <div class="comments-loading" id="commentLoadingIndicator">
+          <div class="spinner"
+            style="width: 28px; height: 28px; border-width: 3px; border-color: rgba(56, 189, 248, 0.2); border-top-color: #38BDF8;">
+          </div>
+        </div>
+
+        <div class="comments-empty-state" id="commentEmptyState" style="display: none;">
+          <svg viewBox="0 0 24 24" width="46" height="46" fill="#334155">
+            <path
+              d="M12,3 C6.5,3 2,6.6 2,11 C2,13.2 3.1,15.2 5,16.6 L4.2,20.4 C4.1,20.8 4.5,21.1 4.8,20.9 L9.3,18.8 C10.2,19 11.1,19.1 12,19.1 C17.5,19.1 22,15.5 22,11 C22,6.6 17.5,3 12,3 Z" />
+          </svg>
+          <span class="comments-empty-title">No comments yet</span>
+          <span class="comments-empty-sub">Be the first to share your thoughts!</span>
+        </div>
+
+        <div class="comments-list" id="commentsList"></div>
+      </div>
+
+      <!-- Reply Indicator Banner -->
+      <div class="comment-reply-banner" id="commentReplyBanner" style="display: none;">
+        <div class="comment-reply-banner-content">
+          <span class="comment-reply-banner-prefix">Replying to</span>
+          <span class="comment-reply-banner-handle" id="commentReplyTargetName">@user</span>
+        </div>
+        <button type="button" class="comment-reply-cancel-btn" id="cancelCommentReplyBtn"
+          aria-label="Cancel reply">✕</button>
+      </div>
+
+      <!-- Bottom Comment Input Box -->
+      <div class="comments-input-bar">
+        <input type="text" id="commentInputEntry" class="comment-input-field" placeholder="Add a kosher comment..."
+          maxlength="400" autocomplete="off" />
+        <button class="comment-send-btn" id="commentSendBtn" aria-label="Send Comment">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+            <path d="M2,21 L23,12 L2,3 L2,10 L17,12 L2,14 Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Prompt Dialog (Sign in / Sign up) -->
+  <div class="confirm-dialog-backdrop" id="authPromptDialog" style="display: none;" aria-hidden="true">
+    <div class="confirm-dialog-card" style="text-align: center;">
+      <div class="confirm-dialog-icon"
+        style="background-color: rgba(56, 189, 248, 0.12); width: 54px; height: 54px; border-radius: 27px; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#38BDF8" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+      <div class="confirm-dialog-title" id="authPromptTitle">Sign in to Comment</div>
+      <div class="confirm-dialog-text" id="authPromptText">Join the Klip community to leave kosher comments, like
+        videos, and follow creators.</div>
+      <div class="confirm-dialog-actions" style="margin-top: 18px; flex-direction: column; gap: 8px;">
+        <button class="primary-btn" id="authPromptLoginBtn" style="width: 100%; height: 44px;">Log In / Sign Up</button>
+        <button class="profile-btn" id="authPromptCancelBtn" style="width: 100%; height: 42px;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Klip Confirmation Dialog -->
+  <div class="confirm-dialog-backdrop" id="deleteConfirmDialog" style="display: none;">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-icon">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#FF2D55" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
+        </svg>
+      </div>
+      <div class="confirm-dialog-title">Delete this Klip?</div>
+      <div class="confirm-dialog-text" id="deleteConfirmText">This will permanently remove it from Klip for everyone.
+        This can't be undone.</div>
+      <div class="confirm-dialog-error" id="deleteConfirmError" style="display: none;"></div>
+      <div class="confirm-dialog-actions">
+        <button class="profile-btn" id="deleteCancelBtn">Cancel</button>
+        <button class="danger-action-btn" id="deleteConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Audio Dialog -->
+  <div class="confirm-dialog-backdrop" id="renameSoundDialog" style="display: none;" aria-hidden="true">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-icon"
+        style="background-color: rgba(56, 189, 248, 0.12); width: 52px; height: 52px; border-radius: 26px; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#38BDF8" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      </div>
+      <div class="confirm-dialog-title">Rename Audio</div>
+      <div class="confirm-dialog-text">Give your audio a custom title so people can search and use it.</div>
+      <div class="field-group" style="width: 100%; margin: 14px 0 6px;">
+        <input type="text" class="input-box" id="renameSoundTitleInput" placeholder="Enter audio name..."
+          maxlength="60" />
+      </div>
+      <div class="confirm-dialog-error" id="renameSoundError" style="display: none;"></div>
+      <div class="confirm-dialog-actions" style="margin-top: 14px;">
+        <button type="button" class="profile-btn" id="renameSoundCancelBtn">Cancel</button>
+        <button type="button" class="primary-btn" id="renameSoundSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SOUND TRIMMER POPUP MODAL ==================== -->
+  <div class="confirm-dialog-backdrop sound-trimmer-backdrop" id="soundTrimmerModalOverlay" style="display: none;"
+    aria-hidden="true">
+    <div class="confirm-dialog-card sound-trimmer-modal-card">
+      <div class="sound-trimmer-modal-header">
+        <div class="sound-trimmer-modal-title-row">
+          <div class="sound-trimmer-modal-title">✂ TRIM SOUND</div>
+          <span id="trimmerDurationVal" class="trimmer-dur-pill">15.0s</span>
+        </div>
+        <div class="sound-trimmer-header-actions">
+          <button type="button" class="trimmer-preview-btn" id="trimmerPlayPauseBtn">▶ Play Preview</button>
+          <button type="button" class="top-icon-btn close-modal-btn" id="closeSoundTrimmerModalBtn"
+            aria-label="Close Trimmer">✕</button>
+        </div>
+      </div>
+
+      <div class="sound-trimmer-modal-sound-info" id="soundTrimmerModalSoundInfo">
+        <div class="sound-trimmer-modal-sound-icon">♫</div>
+        <div class="sound-trimmer-modal-sound-text">
+          <div class="sound-trimmer-modal-sound-name" id="soundTrimmerModalSoundTitle">Original Sound</div>
+          <div class="sound-trimmer-modal-sound-sub" id="soundTrimmerModalSoundArtist">@creator</div>
+        </div>
+      </div>
+
+      <!-- Dual-Handle Waveform Scrubber -->
+      <div class="trimmer-track-wrapper">
+        <div class="trimmer-track-container" id="trimmerTrackContainer">
+          <div class="trimmer-waveform-bar"></div>
+          <div class="trimmer-range-highlight" id="trimmerRangeHighlight"></div>
+          <!-- Draggable Touch Handles -->
+          <div class="trimmer-handle trimmer-handle-start" id="trimmerHandleStart" role="slider"
+            aria-label="Trim Start Handle" tabindex="0">
+            <div class="trimmer-handle-pill"></div>
+            <span class="trimmer-handle-label">START</span>
+          </div>
+          <div class="trimmer-handle trimmer-handle-end" id="trimmerHandleEnd" role="slider"
+            aria-label="Trim End Handle" tabindex="0">
+            <div class="trimmer-handle-pill"></div>
+            <span class="trimmer-handle-label">END</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Precision Touch Steppers Grid -->
+      <div class="trimmer-steppers-grid">
+        <div class="trimmer-stepper-box">
+          <span class="trimmer-stepper-label">START POINT</span>
+          <div class="trimmer-stepper-row">
+            <button type="button" class="trimmer-step-btn" id="trimmerStartMinusBtn" aria-label="Back 1s">-1s</button>
+            <span class="trimmer-step-val" id="trimmerStartVal">0:00</span>
+            <button type="button" class="trimmer-step-btn" id="trimmerStartPlusBtn" aria-label="Forward 1s">+1s</button>
+          </div>
+        </div>
+
+        <div class="trimmer-stepper-box">
+          <span class="trimmer-stepper-label">END POINT</span>
+          <div class="trimmer-stepper-row">
+            <button type="button" class="trimmer-step-btn" id="trimmerEndMinusBtn" aria-label="Back 1s">-1s</button>
+            <span class="trimmer-step-val" id="trimmerEndVal">0:15</span>
+            <button type="button" class="trimmer-step-btn" id="trimmerEndPlusBtn" aria-label="Forward 1s">+1s</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Preset Length Chips -->
+      <div class="trimmer-presets-row">
+        <span class="trimmer-presets-label">Preset:</span>
+        <button type="button" class="trimmer-preset-btn" id="trimmerPreset15s">15s</button>
+        <button type="button" class="trimmer-preset-btn" id="trimmerPreset30s">30s</button>
+        <button type="button" class="trimmer-preset-btn" id="trimmerPreset60s">60s</button>
+        <button type="button" class="trimmer-preset-btn" id="trimmerPresetFull">Full</button>
+      </div>
+
+      <div class="trimmer-constraint-hint" id="trimmerConstraintHint" style="display: none;">
+        ⚠️ Cropped sound cannot be less than the video length (<span id="trimmerMinVideoDurLabel">0s</span>)
+      </div>
+
+      <!-- Modal Bottom Actions -->
+      <div class="sound-trimmer-modal-actions">
+        <button type="button" class="confirm-dialog-btn cancel" id="cancelSoundTrimmerBtn">Cancel</button>
+        <button type="button" class="confirm-dialog-btn confirm" id="applySoundTrimmerBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SOUND PICKER BOTTOM SHEET MODAL ==================== -->
+  <div class="comments-modal-backdrop sound-picker-backdrop" id="soundPickerModalOverlay" style="display: none;"
+    aria-hidden="true">
+    <div class="comments-modal-card sound-picker-modal-card">
+      <div class="comments-modal-top">
+        <div class="comments-drag-handle"></div>
+        <div class="comments-header-row">
+          <div class="comments-modal-title">Audios Library</div>
+          <button class="comments-close-btn" id="closeSoundPickerBtn" aria-label="Close Sound Picker">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M19,6.41 L17.59,5 L12,10.59 L6.41,5 L5,6.41 L10.59,12 L5,17.59 L6.41,19 L12,13.41 L17.59,19 L19,17.59 L13.41,12 Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Tabs: Audios | Upload Audio -->
+      <div class="sound-picker-tabs">
+        <button class="sound-tab-btn active" id="tabCommunitySoundsBtn">🎵 Audios</button>
+        <button class="sound-tab-btn" id="tabUploadSoundBtn">📤 Upload Audio</button>
+      </div>
+
+      <div class="sound-picker-body">
+        <!-- Search input for sounds -->
+        <div class="sound-search-wrap" id="soundSearchWrap">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748B" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" class="sound-search-input" id="soundSearchInput"
+            placeholder="Search audios, creators..." />
+        </div>
+
+        <!-- Hidden preview player for picker list -->
+        <audio id="soundPickerAudio" preload="none"></audio>
+
+        <!-- Audios Catalog List -->
+        <div class="sound-catalog-list" id="communitySoundsList"></div>
+
+        <!-- Tab 2: Upload Audio Form -->
+        <div class="sound-upload-view" id="soundUploadView" style="display: none;">
+          <input type="file" id="customAudioFileInput" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"
+            style="display: none;" />
+          <div class="sound-upload-dropzone" id="soundUploadDropzone">
+            <div class="sound-upload-icon">🎵</div>
+            <div class="sound-upload-title">Choose an Audio File</div>
+            <div class="sound-upload-sub">Supports MP3, M4A, WAV, AAC (up to 25 MB)</div>
+            <button type="button" class="primary-btn sound-upload-pick-btn" id="pickAudioFileBtn">Browse Files</button>
+          </div>
+
+          <div class="sound-upload-preview-card" id="soundUploadPreviewCard" style="display: none;">
+            <div class="sound-upload-meta">
+              <span class="sound-upload-filename" id="soundUploadFileName">audio.mp3</span>
+              <span class="sound-upload-filesize" id="soundUploadFileSize">0 MB</span>
+            </div>
+            <div class="field-group" style="width: 100%; margin-top: 10px;">
+              <label class="field-label">SOUND TITLE</label>
+              <input type="text" class="input-box" id="customSoundTitleInput" placeholder="e.g. My Favorite Niggun"
+                maxlength="80" />
+            </div>
+            <div class="sound-upload-actions-row">
+              <button type="button" class="profile-btn" id="cancelAudioUploadBtn">Change</button>
+              <button type="button" class="primary-btn" id="applyUploadedSoundBtn">Use This Audio</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="klip-toast" id="klipToast">Copied link to clipboard!</div>
+
+  <script src="./js/hls.min.js"></script>
+  <script type="module" src="./js/app.js?v=55"></script>
+</body>
+
+</html>

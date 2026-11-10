@@ -1,0 +1,9 @@
+[
+  {
+    "origin": ["https://kliponline.com", "http://localhost:5173", "http://localhost:3000"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Range", "Accept-Ranges", "Range", "Content-Length", "ETag"],
+    "maxAgeSeconds": 3600
+  }
+]
+
