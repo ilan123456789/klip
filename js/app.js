@@ -1061,7 +1061,7 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
   soundRow.setAttribute("role", "button");
   soundRow.setAttribute("tabindex", "0");
   soundRow.setAttribute("aria-label", "View sound details");
-  const displaySoundTitle = klip.SoundTitle || `Original Sound - ${klip.CreatorHandle || "@creator"}`;
+  const displaySoundTitle = klip.SoundTitle || `Original Sound - ${klip.CreatorHandle || "@user"}`;
   soundRow.innerHTML = `
     <span class="klip-sound-icon">♫</span>
     <span class="klip-sound-title">${escapeHtml(displaySoundTitle)}</span>
@@ -1079,7 +1079,7 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
     pushSubpage("SoundDetailPage", {
       soundTitle: displaySoundTitle,
       soundId: klip.SoundId || `sound_${klip.Id}`,
-      creatorHandle: klip.CreatorHandle || "@creator",
+      creatorHandle: klip.CreatorHandle || "@user",
       creatorUid: klip.CreatorUid || "",
       audioUrl: klip.SoundAudioUrl || klip.VideoUrl || "",
       klip: klip,
@@ -1847,7 +1847,7 @@ async function handleFollowBadgeClicked(klip, badgeEl) {
 function openCreatorProfile(klip) {
   pushSubpage("CreatorProfilePage", {
     uid: klip.CreatorUid || "",
-    handle: klip.CreatorHandle || "@creator",
+    handle: klip.CreatorHandle || "@user",
     initials: klip.CreatorInitials || "KL",
   });
 }
@@ -4011,7 +4011,7 @@ async function onSoundDetailAppearing(params = {}) {
   const renameBtn = document.getElementById("soundHeroRenameBtn");
 
   const title = params.soundTitle || "Original Sound";
-  const creator = params.creatorHandle || "@creator";
+  const creator = params.creatorHandle || "@user";
   if (navTitle) navTitle.textContent = title;
   if (heroTitle) heroTitle.textContent = title;
   if (heroCreator) {
@@ -4243,14 +4243,14 @@ function renderCommunitySoundCatalog(filterText = "") {
   pool.forEach((k) => {
     if (!k || !k.Id) return;
     const soundId = k.SoundId || `sound_${k.Id}`;
-    const soundTitle = k.SoundTitle || `Original Sound - ${k.CreatorHandle || "@creator"}`;
+    const soundTitle = k.SoundTitle || `Original Sound - ${k.CreatorHandle || "@user"}`;
     const audioUrl = k.SoundAudioUrl || k.VideoUrl || "";
 
     if (!uniqueSoundsMap.has(soundId)) {
       uniqueSoundsMap.set(soundId, {
         id: soundId,
         title: soundTitle,
-        artist: k.CreatorHandle || "@creator",
+        artist: k.CreatorHandle || "@user",
         audioUrl: audioUrl,
         duration: 30,
         usesCount: 1,
@@ -4332,7 +4332,7 @@ function applySoundToCreation(sound) {
   state.selectedSound = {
     id: sound.id || `sound_${Date.now()}`,
     title: sound.title || "Selected Sound",
-    artist: sound.artist || "@creator",
+    artist: sound.artist || "@user",
     audioUrl: sound.audioUrl || "",
     audioFile: sound.audioFile || null,
     isCustomUpload: Boolean(sound.isCustomUpload),
@@ -4377,7 +4377,7 @@ function openSoundTrimmerModal() {
   const artistEl = document.getElementById("soundTrimmerModalSoundArtist");
 
   if (titleEl) titleEl.textContent = state.selectedSound.title || "Original Sound";
-  if (artistEl) artistEl.textContent = state.selectedSound.artist || "@creator";
+  if (artistEl) artistEl.textContent = state.selectedSound.artist || "@user";
 
   // Backup current points in case user cancels
   state.selectedSound._backupStart = state.selectedSound.startTime || 0;

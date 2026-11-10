@@ -1027,23 +1027,26 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
         LEFT JOIN klip_likes l ON l.klip_id = k.id AND l.user_uid = ?
         LEFT JOIN klip_bookmarks b ON b.klip_id = k.id AND b.user_uid = ?
         LEFT JOIN follows f ON f.followed_uid = k.creator_uid AND f.follower_uid = ?
+        WHERE (k.playback_url != '' OR k.video_url != '' OR (k.photo_urls IS NOT NULL AND k.photo_urls != '[]' AND k.photo_urls != ''))
+          AND k.creator_uid != ''
+          AND k.creator_handle != ''
       `;
       const params = [userUid, userUid, userUid];
 
       if (creatorUid) {
-        sql += " WHERE k.creator_uid = ? ORDER BY k.created_at DESC LIMIT ?";
+        sql += " AND k.creator_uid = ? ORDER BY k.created_at DESC LIMIT ?";
         params.push(creatorUid, limit);
       } else if (tab === "FEMALE") {
-        sql += " WHERE k.is_female_only = 1 ORDER BY k.created_at DESC LIMIT ?";
+        sql += " AND k.is_female_only = 1 ORDER BY k.created_at DESC LIMIT ?";
         params.push(limit);
       } else if (tab === "FOLLOWING" && userUid) {
-        sql += ` WHERE k.creator_uid IN (SELECT followed_uid FROM follows WHERE follower_uid = ?) ORDER BY k.created_at DESC LIMIT ?`;
+        sql += ` AND k.creator_uid IN (SELECT followed_uid FROM follows WHERE follower_uid = ?) ORDER BY k.created_at DESC LIMIT ?`;
         params.push(userUid, limit);
       } else if (tag) {
-        sql += " WHERE k.tags LIKE ? ORDER BY k.created_at DESC LIMIT ?";
+        sql += " AND k.tags LIKE ? ORDER BY k.created_at DESC LIMIT ?";
         params.push(`%${tag}%`, limit);
       } else {
-        sql += " WHERE k.is_female_only = 0 ORDER BY k.created_at DESC LIMIT ?";
+        sql += " AND k.is_female_only = 0 ORDER BY k.created_at DESC LIMIT ?";
         params.push(limit);
       }
 

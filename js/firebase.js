@@ -130,11 +130,11 @@ export function createKlipVideo(raw = {}) {
 
   return {
     Id: klipId,
-    CreatorUid: raw.CreatorUid ?? raw.creator_uid ?? raw.creatorUid ?? "",
-    CreatorHandle: raw.CreatorHandle ?? raw.creator_handle ?? raw.creatorHandle ?? "@user",
-    CreatorInitials: raw.CreatorInitials ?? raw.creator_initials ?? raw.creatorInitials ?? "KL",
-    CreatorAvatarUrl: raw.CreatorAvatarUrl ?? raw.creator_avatar_url ?? raw.creatorAvatarUrl ?? "",
-    Caption: raw.Caption ?? raw.caption ?? "",
+    CreatorUid: raw.CreatorUid || raw.creator_uid || raw.creatorUid || "",
+    CreatorHandle: raw.CreatorHandle || raw.creator_handle || raw.creatorHandle || "@user",
+    CreatorInitials: raw.CreatorInitials || raw.creator_initials || raw.creatorInitials || "KL",
+    CreatorAvatarUrl: raw.CreatorAvatarUrl || raw.creator_avatar_url || raw.creatorAvatarUrl || "",
+    Caption: raw.Caption || raw.caption || "",
     Tags: tags,
     SoundTitle: raw.SoundTitle ?? raw.sound_title ?? raw.soundTitle ?? "",
     Category: raw.Category ?? raw.category ?? "",
