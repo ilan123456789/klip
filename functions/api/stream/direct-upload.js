@@ -17,7 +17,7 @@ export async function onRequestPost(context) {
 
     if (!apiToken) {
       return new Response(
-        JSON.stringify({ success: false, error: "CLOUDFLARE_API_TOKEN is not configured." }),
+        JSON.stringify({ success: false, error: "Upload service is not configured." }),
         { status: 500, headers }
       );
     }

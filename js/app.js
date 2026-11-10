@@ -2811,7 +2811,7 @@ function dismissGlobalUploadPill() {
 
 async function startBackgroundKlipUpload(job) {
   currentUploadJob = job;
-  showGlobalUploadPill(job.isPhotoMode ? "Preparing photos..." : "Preparing video...", 15);
+  showGlobalUploadPill(job.isPhotoMode ? "Uploading (5%)..." : "Uploading (5%)...", 5);
 
   try {
     // 1. Process Sound if needed
@@ -2819,7 +2819,7 @@ async function startBackgroundKlipUpload(job) {
     if (job.selectedSound) {
       let finalAudioUrl = job.selectedSound.audioUrl || "";
       if (job.selectedSound.isCustomUpload && job.selectedSound.audioFile) {
-        updateGlobalUploadPill("Uploading audio track...", 25);
+        updateGlobalUploadPill("Uploading (25%)...", 25);
         const audioUploadRes = await FirebaseService.uploadAudioAsync(job.selectedSound.audioFile);
         if (audioUploadRes.success && audioUploadRes.url) {
           finalAudioUrl = audioUploadRes.url;
@@ -2843,7 +2843,7 @@ async function startBackgroundKlipUpload(job) {
     }
 
     if (job.isPhotoMode) {
-      updateGlobalUploadPill(`Uploading ${job.photoFiles.length} photo(s)...`, 50);
+      updateGlobalUploadPill("Uploading (50%)...", 50);
       const { success, error } = await FirebaseService.uploadAndCreatePhotoSlideshowAsync(
         job.photoFiles,
         job.caption,
@@ -2855,14 +2855,14 @@ async function startBackgroundKlipUpload(job) {
       }
     } else {
       // 2. Upload Video IMMEDIATELY (no blocking watermark delay!)
-      updateGlobalUploadPill("Uploading Klip to server...", 10);
+      updateGlobalUploadPill("Uploading (5%)...", 5);
       const { success, error, klipId } = await FirebaseService.uploadAndCreateKlipAsync(
         job.videoFile,
         job.caption,
         null, // Non-blocking: watermark is attached asynchronously so post is immediate!
         soundMeta,
         (percent) => {
-          updateGlobalUploadPill(`Uploading Klip (${percent}%)...`, 10 + Math.round(percent * 0.8));
+          updateGlobalUploadPill(`Uploading (${percent}%)...`, Math.min(95, Math.max(5, percent)));
         }
       );
 
@@ -2885,7 +2885,7 @@ async function startBackgroundKlipUpload(job) {
     }
 
     // Success!
-    updateGlobalUploadPill("Finishing up...", 95);
+    updateGlobalUploadPill("Uploading (100%)...", 100);
     finishGlobalUploadPill(true, "Klip posted successfully! 🎉");
     currentUploadJob = null;
 
@@ -6010,7 +6010,7 @@ function setupEventListeners() {
         resetUploadForm();
         await switchRootTab("MainPage");
         activateCurrentFeedVideo();
-        showToast("Uploading slideshow in background...");
+        showToast("Uploading (0%)...");
         startBackgroundKlipUpload(job);
         return;
       }
@@ -6032,7 +6032,7 @@ function setupEventListeners() {
       resetUploadForm();
       await switchRootTab("MainPage");
       activateCurrentFeedVideo();
-      showToast("Uploading Klip in background...");
+      showToast("Uploading (0%)...");
       startBackgroundKlipUpload(job);
     });
 

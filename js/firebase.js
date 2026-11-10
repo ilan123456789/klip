@@ -1276,7 +1276,7 @@ class FirebaseServiceClass {
         return {
           success: false,
           avatarUrl: null,
-          error: "Failed to upload cropped image to storage.",
+          error: "Failed to upload cropped image. Please try again.",
         };
       }
 
@@ -1427,9 +1427,9 @@ class FirebaseServiceClass {
                 };
                 xhr.onload = () => {
                   if (xhr.status >= 200 && xhr.status < 300) resolve();
-                  else reject(new Error(`Cloudflare Direct Upload error (HTTP ${xhr.status})`));
+                  else reject(new Error(`Upload error (HTTP ${xhr.status})`));
                 };
-                xhr.onerror = () => reject(new Error("Cloudflare Direct Upload network failure"));
+                xhr.onerror = () => reject(new Error("Upload network failure"));
                 xhr.send(form);
               });
 
@@ -1443,7 +1443,7 @@ class FirebaseServiceClass {
             }
           }
         } catch (cfErr) {
-          console.warn("[Upload] Cloudflare Direct Upload bypassed/failed, falling back to Cloudflare R2:", cfErr);
+          console.warn("[Upload] Direct Upload bypassed/failed, falling back to secondary storage:", cfErr);
         }
 
         // 2. Fallback to Cloudflare R2 if Stream Direct Upload was not used
@@ -1468,7 +1468,7 @@ class FirebaseServiceClass {
           if (!videoUrl) {
             return {
               success: false,
-              error: "Failed to upload video to Cloudflare storage.",
+              error: "Failed to upload video. Please try again.",
             };
           }
 
@@ -1700,7 +1700,7 @@ class FirebaseServiceClass {
       if (uploadedUrls.length === 0) {
         return {
           success: false,
-          error: "Failed to upload photos to storage.",
+          error: "Failed to upload photos. Please try again.",
         };
       }
 
