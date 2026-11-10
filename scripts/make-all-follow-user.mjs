@@ -28,10 +28,13 @@ async function queryD1(sql, params = []) {
 }
 
 async function main() {
-  console.log('1. Finding user @ilanlev...');
-  const users = await queryD1("SELECT uid, handle, display_name FROM users WHERE LOWER(handle) = '@ilanlev' OR LOWER(handle) = 'ilanlev';");
+  const targetHandleInput = process.argv[2] || '@ilanlev';
+  const cleanInput = targetHandleInput.replace(/^@/, '').toLowerCase();
+
+  console.log(`1. Finding user @${cleanInput}...`);
+  const users = await queryD1("SELECT uid, handle, display_name FROM users WHERE LOWER(REPLACE(handle, '@', '')) = ?;", [cleanInput]);
   if (!users || users.length === 0) {
-    console.error('User @ilanlev not found!');
+    console.error(`User @${cleanInput} not found!`);
     return;
   }
 
@@ -63,9 +66,10 @@ async function main() {
       following_count = (SELECT COUNT(*) FROM follows WHERE follower_uid = users.uid);
   `);
 
-  console.log('5. Verifying @ilanlev counts...');
+  console.log(`5. Verifying ${targetUser.handle} counts...`);
   const updatedUser = await queryD1("SELECT uid, handle, followers_count, following_count FROM users WHERE uid = ?;", [targetUid]);
   console.log('Updated record:', updatedUser[0]);
 }
 
 main().catch(console.error);
+
