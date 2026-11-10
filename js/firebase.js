@@ -1998,13 +1998,19 @@ class FirebaseServiceClass {
       });
 
       if (video.CreatorUid) {
-        const creator = await this.getUserProfileAsync(video.CreatorUid);
-        if (creator) {
-          creator.ShkoyachCount = Math.max(
+        const cachedCreator = this.profileCache.get(video.CreatorUid);
+        if (cachedCreator) {
+          cachedCreator.ShkoyachCount = Math.max(
             0,
-            creator.ShkoyachCount + (isLiked ? 1 : -1)
+            cachedCreator.ShkoyachCount + (isLiked ? 1 : -1)
           );
-          await this.saveUserProfileAsync(creator);
+        }
+        if (this.currentUser && video.CreatorUid === this.currentUid) {
+          this.currentUser.ShkoyachCount = Math.max(
+            0,
+            this.currentUser.ShkoyachCount + (isLiked ? 1 : -1)
+          );
+          this._saveUserCache(this.currentUser);
         }
 
         if (isLiked && video.CreatorUid !== this.currentUid && this.currentUser) {

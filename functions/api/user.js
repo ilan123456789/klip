@@ -18,8 +18,14 @@ export async function onRequestGet(context) {
     const uid = url.searchParams.get("uid");
     const handle = url.searchParams.get("handle");
 
+    const userSelectSql = `
+      SELECT u.*,
+        MAX(u.shkoyach_count, COALESCE((SELECT SUM(likes_count) FROM klips WHERE creator_uid = u.uid), 0)) AS shkoyach_count
+      FROM users u
+    `;
+
     if (uid) {
-      const user = await queryFirst(db, "SELECT * FROM users WHERE uid = ?;", uid);
+      const user = await queryFirst(db, `${userSelectSql} WHERE u.uid = ?;`, uid);
       if (!user) {
         return new Response(JSON.stringify({ success: false, error: "User not found." }), {
           status: 404,
@@ -31,7 +37,7 @@ export async function onRequestGet(context) {
 
     if (handle) {
       const cleanHandle = handle.startsWith("@") ? handle : `@${handle}`;
-      const user = await queryFirst(db, "SELECT * FROM users WHERE LOWER(handle) = LOWER(?);", cleanHandle);
+      const user = await queryFirst(db, `${userSelectSql} WHERE LOWER(u.handle) = LOWER(?);`, cleanHandle);
       if (!user) {
         return new Response(JSON.stringify({ success: false, error: "User not found." }), {
           status: 404,
@@ -42,7 +48,7 @@ export async function onRequestGet(context) {
     }
 
     // Default: return all users
-    const users = await queryAll(db, "SELECT * FROM users ORDER BY created_at DESC;");
+    const users = await queryAll(db, `${userSelectSql} ORDER BY u.created_at DESC;`);
     return new Response(JSON.stringify({ success: true, count: users.length, users }), {
       status: 200,
       headers,

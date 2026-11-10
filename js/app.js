@@ -1775,6 +1775,23 @@ function handleLikeClicked(klip, btnEl) {
   klip.IsLiked = !klip.IsLiked;
   klip.LikesCount = Math.max(0, klip.LikesCount + (klip.IsLiked ? 1 : -1));
   syncVideoAcrossAllViews(klip);
+
+  // Dynamically update creator / profile Shkoyach counter if on screen
+  if (state.creatorUid && state.creatorUid === klip.CreatorUid) {
+    const creatorShkoyachEl = document.getElementById("creatorShkoyachCount");
+    if (creatorShkoyachEl) {
+      const cur = Number(creatorShkoyachEl.textContent) || 0;
+      creatorShkoyachEl.textContent = String(Math.max(0, cur + (klip.IsLiked ? 1 : -1)));
+    }
+  }
+  if (FirebaseService.currentUid && FirebaseService.currentUid === klip.CreatorUid) {
+    const profileShkoyachEl = document.getElementById("profileShkoyachCount");
+    if (profileShkoyachEl) {
+      const cur = Number(profileShkoyachEl.textContent) || 0;
+      profileShkoyachEl.textContent = String(Math.max(0, cur + (klip.IsLiked ? 1 : -1)));
+    }
+  }
+
   FirebaseService.setLikeAsync(klip, klip.IsLiked);
   if (klip.IsLiked) {
     RecommendationService.recordInteraction(klip, VideoInteractionType.Liked);
@@ -2937,7 +2954,7 @@ async function loadLoggedInProfileAsync() {
   bindProfileKlipsGrid(FirebaseService.getCachedKlipsSnapshot());
 
   const [profile, klips] = await Promise.all([
-    FirebaseService.getUserProfileAsync(FirebaseService.currentUid),
+    FirebaseService.getUserProfileAsync(FirebaseService.currentUid, true),
     FirebaseService.getFeedKlipsAsync(),
   ]);
 
@@ -3149,7 +3166,7 @@ async function loadCreatorProfileAsync() {
 
   try {
     const [profile, followedUids, klips] = await Promise.all([
-      FirebaseService.getUserProfileAsync(state.creatorUid),
+      FirebaseService.getUserProfileAsync(state.creatorUid, true),
       FirebaseService.getFollowingUidsAsync(),
       FirebaseService.getCreatorKlipsAsync(state.creatorUid),
     ]);

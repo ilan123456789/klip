@@ -1062,18 +1062,23 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
     try {
       const uid = searchParams.get("uid");
       const handle = searchParams.get("handle");
+      const userSelectSql = `
+        SELECT u.*,
+          MAX(u.shkoyach_count, COALESCE((SELECT SUM(likes_count) FROM klips WHERE creator_uid = u.uid), 0)) AS shkoyach_count
+        FROM users u
+      `;
       let rows = [];
       if (uid) {
-        rows = await queryD1("SELECT * FROM users WHERE uid = ? LIMIT 1;", [uid]);
+        rows = await queryD1(`${userSelectSql} WHERE u.uid = ? LIMIT 1;`, [uid]);
         if (rows.length === 0) return sendJson(res, 404, { success: false, error: "User not found" });
         return sendJson(res, 200, { success: true, user: rows[0] });
       } else if (handle) {
         const cleanHandle = handle.startsWith("@") ? handle : `@${handle}`;
-        rows = await queryD1("SELECT * FROM users WHERE LOWER(handle) = LOWER(?) LIMIT 1;", [cleanHandle]);
+        rows = await queryD1(`${userSelectSql} WHERE LOWER(u.handle) = LOWER(?) LIMIT 1;`, [cleanHandle]);
         if (rows.length === 0) return sendJson(res, 404, { success: false, error: "User not found" });
         return sendJson(res, 200, { success: true, user: rows[0] });
       } else {
-        rows = await queryD1("SELECT * FROM users ORDER BY created_at DESC;", []);
+        rows = await queryD1(`${userSelectSql} ORDER BY u.created_at DESC;`, []);
         return sendJson(res, 200, { success: true, count: rows.length, users: rows });
       }
     } catch (err) {
@@ -1224,13 +1229,21 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
       const now = Math.floor(Date.now() / 1000);
 
       if (action === "like_klip" && klipId && userUid) {
-        await queryD1("INSERT OR IGNORE INTO klip_likes (user_uid, klip_id, created_at) VALUES (?, ?, ?);", [userUid, klipId, now]);
-        await queryD1("UPDATE klips SET likes_count = likes_count + 1 WHERE id = ?;", [klipId]);
+        const existing = await queryD1("SELECT 1 FROM klip_likes WHERE user_uid = ? AND klip_id = ? LIMIT 1;", [userUid, klipId]);
+        if (existing.length === 0) {
+          await queryD1("INSERT OR IGNORE INTO klip_likes (user_uid, klip_id, created_at) VALUES (?, ?, ?);", [userUid, klipId, now]);
+          await queryD1("UPDATE klips SET likes_count = likes_count + 1 WHERE id = ?;", [klipId]);
+          await queryD1("UPDATE users SET shkoyach_count = shkoyach_count + 1 WHERE uid = (SELECT creator_uid FROM klips WHERE id = ?);", [klipId]);
+        }
         return sendJson(res, 200, { success: true, action, klipId, liked: true });
       }
       if (action === "unlike_klip" && klipId && userUid) {
-        await queryD1("DELETE FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", [userUid, klipId]);
-        await queryD1("UPDATE klips SET likes_count = MAX(0, likes_count - 1) WHERE id = ?;", [klipId]);
+        const existing = await queryD1("SELECT 1 FROM klip_likes WHERE user_uid = ? AND klip_id = ? LIMIT 1;", [userUid, klipId]);
+        if (existing.length > 0) {
+          await queryD1("DELETE FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", [userUid, klipId]);
+          await queryD1("UPDATE klips SET likes_count = MAX(0, likes_count - 1) WHERE id = ?;", [klipId]);
+          await queryD1("UPDATE users SET shkoyach_count = MAX(0, shkoyach_count - 1) WHERE uid = (SELECT creator_uid FROM klips WHERE id = ?);", [klipId]);
+        }
         return sendJson(res, 200, { success: true, action, klipId, liked: false });
       }
       if (action === "bookmark_klip" && klipId && userUid) {

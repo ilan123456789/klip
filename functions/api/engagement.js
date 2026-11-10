@@ -89,21 +89,37 @@ export async function onRequestPost(context) {
 
     // 1. LIKE KLIP
     if (action === "like_klip" && klipId) {
-      await execute(
-        db,
-        "INSERT OR IGNORE INTO klip_likes (user_uid, klip_id, created_at) VALUES (?, ?, ?);",
-        userUid,
-        klipId,
-        now
-      );
-      await execute(db, "UPDATE klips SET likes_count = likes_count + 1 WHERE id = ?;", klipId);
+      const existing = await queryFirst(db, "SELECT 1 FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", userUid, klipId);
+      if (!existing) {
+        await execute(
+          db,
+          "INSERT OR IGNORE INTO klip_likes (user_uid, klip_id, created_at) VALUES (?, ?, ?);",
+          userUid,
+          klipId,
+          now
+        );
+        await execute(db, "UPDATE klips SET likes_count = likes_count + 1 WHERE id = ?;", klipId);
+        await execute(
+          db,
+          "UPDATE users SET shkoyach_count = shkoyach_count + 1 WHERE uid = (SELECT creator_uid FROM klips WHERE id = ?);",
+          klipId
+        );
+      }
       return new Response(JSON.stringify({ success: true, action, klipId, liked: true }), { status: 200, headers });
     }
 
     // 2. UNLIKE KLIP
     if (action === "unlike_klip" && klipId) {
-      await execute(db, "DELETE FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", userUid, klipId);
-      await execute(db, "UPDATE klips SET likes_count = MAX(0, likes_count - 1) WHERE id = ?;", klipId);
+      const existing = await queryFirst(db, "SELECT 1 FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", userUid, klipId);
+      if (existing) {
+        await execute(db, "DELETE FROM klip_likes WHERE user_uid = ? AND klip_id = ?;", userUid, klipId);
+        await execute(db, "UPDATE klips SET likes_count = MAX(0, likes_count - 1) WHERE id = ?;", klipId);
+        await execute(
+          db,
+          "UPDATE users SET shkoyach_count = MAX(0, shkoyach_count - 1) WHERE uid = (SELECT creator_uid FROM klips WHERE id = ?);",
+          klipId
+        );
+      }
       return new Response(JSON.stringify({ success: true, action, klipId, liked: false }), { status: 200, headers });
     }
 
