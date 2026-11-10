@@ -7025,6 +7025,57 @@ function setupEventListeners() {
 }
 
 // ==================== BOOTSTRAP ====================
+function openLegalModal(type) {
+  const overlay = document.getElementById("legalModalOverlay");
+  const titleEl = document.getElementById("legalModalTitle");
+  const contentEl = document.getElementById("legalModalContent");
+  if (!overlay || !titleEl || !contentEl) return;
+
+  if (type === "terms") {
+    titleEl.textContent = "Terms of Service";
+    contentEl.innerHTML = `
+      <p><strong>Last Updated: November 2026</strong></p>
+      <p>Welcome to <strong>Klip</strong> (kliponline.com). Klip is an independent kosher Jewish video and photo-sharing platform designed for sharing Torah, Jewish simchas, music, and kosher entertainment.</p>
+      <h4>1. Acceptance of Terms</h4>
+      <p>By creating an account or using Klip, you agree to comply with and be bound by these Terms. If you do not agree, do not use the service.</p>
+      <h4>2. Community Guidelines &amp; Content Standards</h4>
+      <p>Klip strictly enforces kosher community values. All posted content must respect Jewish modesty, avoid vulgarity, hate speech, or harassment, and comply with all applicable copyright laws.</p>
+      <h4>3. User Accounts</h4>
+      <p>You are responsible for maintaining the confidentiality of your account credentials. All accounts created on Klip are strictly for personal use within the Klip platform.</p>
+      <h4>4. Contact</h4>
+      <p>For questions or support, contact the Klip team at <a href="mailto:contact@kliponline.com" style="color: #38BDF8;">contact@kliponline.com</a> or via WhatsApp at <a href="https://wa.me/19024490799" target="_blank" style="color: #38BDF8;">+1 902 449 0799</a>.</p>
+    `;
+  } else if (type === "privacy") {
+    titleEl.textContent = "Privacy Policy";
+    contentEl.innerHTML = `
+      <p><strong>Last Updated: November 2026</strong></p>
+      <p>Your privacy is important to us. This Privacy Policy explains how <strong>Klip</strong> collects, uses, and protects your information.</p>
+      <h4>1. Information We Collect</h4>
+      <p>When you register, we collect your email address, chosen handle, display name, and profile information. When you upload media, your videos, photos, and sounds are stored securely on Cloudflare infrastructure.</p>
+      <h4>2. How We Use Information</h4>
+      <p>We use your information exclusively to operate the Klip platform, provide authentication, deliver video feeds, and notify you of interactions (likes, bookmarks, comments).</p>
+      <h4>3. Data Protection</h4>
+      <p>We do not sell, rent, or share your personal data with third-party advertisers or data brokers. All credentials are encrypted using industry-standard protocols.</p>
+      <h4>4. Contact</h4>
+      <p>For privacy inquiries, contact us at <a href="mailto:contact@kliponline.com" style="color: #38BDF8;">contact@kliponline.com</a>.</p>
+    `;
+  } else {
+    titleEl.textContent = "About Klip";
+    contentEl.innerHTML = `
+      <p><strong>Klip — Kosher Clips &amp; Simchas</strong></p>
+      <p>Klip is an authentic, independent kosher Jewish short-video and photo community platform. Built for the global Jewish community to share and discover wholesome simchas, niggunim, Torah thoughts, and creative kosher media in a family-friendly environment.</p>
+      <p>Developed with pride for the community. For inquiries, creator verification, or feedback, WhatsApp us at <a href="https://wa.me/19024490799" target="_blank" style="color: #38BDF8;">+1 902 449 0799</a>.</p>
+    `;
+  }
+
+  overlay.style.display = "flex";
+}
+
+function closeLegalModal() {
+  const overlay = document.getElementById("legalModalOverlay");
+  if (overlay) overlay.style.display = "none";
+}
+
 async function initApp() {
   registerUserGestureUnlock();
   updateSoundIcons();
@@ -7042,6 +7093,24 @@ async function initApp() {
       propagateAvatarUpdate(FirebaseService.currentUser.AvatarUrl);
     }
   });
+
+  const closeLegalBtn = document.getElementById("closeLegalModalBtn");
+  if (closeLegalBtn) closeLegalBtn.onclick = closeLegalModal;
+  const legalOverlay = document.getElementById("legalModalOverlay");
+  if (legalOverlay) {
+    legalOverlay.onclick = (e) => {
+      if (e.target === legalOverlay) closeLegalModal();
+    };
+  }
+
+  const termsLinks = [document.getElementById("openTermsLink"), document.getElementById("sidebarTermsBtn")];
+  termsLinks.forEach(el => { if (el) el.onclick = (e) => { e.preventDefault(); openLegalModal("terms"); }; });
+
+  const privacyLinks = [document.getElementById("openPrivacyLink"), document.getElementById("sidebarPrivacyBtn")];
+  privacyLinks.forEach(el => { if (el) el.onclick = (e) => { e.preventDefault(); openLegalModal("privacy"); }; });
+
+  const aboutBtn = document.getElementById("sidebarAboutBtn");
+  if (aboutBtn) aboutBtn.onclick = (e) => { e.preventDefault(); openLegalModal("about"); };
 
   await Promise.all([onMainPageAppearing(), restorePromise]);
 

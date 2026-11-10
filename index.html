@@ -115,6 +115,16 @@
           <span class="kbd-pill">Shkoyach ♥</span>
         </div>
       </div>
+
+      <div class="sidebar-footer-links" style="padding: 12px 14px; font-size: 11px; color: #64748B; border-top: 1px solid #1E293B; margin-top: 10px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+          <a href="#" id="sidebarTermsBtn" style="color: #94A3B8; text-decoration: none;">Terms</a> •
+          <a href="#" id="sidebarPrivacyBtn" style="color: #94A3B8; text-decoration: none;">Privacy</a> •
+          <a href="#" id="sidebarAboutBtn" style="color: #94A3B8; text-decoration: none;">About</a> •
+          <a href="https://wa.me/19024490799" target="_blank" rel="noopener" style="color: #94A3B8; text-decoration: none;">Contact</a>
+        </div>
+        <div style="color: #475569; font-size: 10px;">© 2026 Klip. Independent Kosher Video Platform.</div>
+      </div>
     </aside>
 
     <!-- ==================== MAIN STAGE ==================== -->
@@ -299,8 +309,7 @@
                     <div class="empty-picker-prompt" id="emptyPhotoPromptView">
                       <div class="picker-icon-circle purple">📷</div>
                       <div class="picker-title">Create a Photo Slideshow</div>
-                      <div class="picker-subtitle">Select 1 or multiple photos so viewers can swipe through them like
-                        TikTok</div>
+                      <div class="picker-subtitle">Select 1 or multiple photos so viewers can swipe through your slideshow</div>
                       <div class="picker-cta-pill purple">Select Photos</div>
                     </div>
 
@@ -450,6 +459,11 @@
 
                   <div id="authToggleFooter" style="text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none;">
                     Already have an account? <span style="color: var(--accent-blue); font-weight: 600; text-decoration: underline;">Log In</span>
+                  </div>
+
+                  <div class="auth-legal-notice" style="margin-top: 16px; font-size: 11px; color: #64748B; text-align: center; line-height: 1.5;">
+                    Klip is an independent platform for kosher Jewish video and photo sharing.<br/>
+                    By signing up or logging in, you agree to our <a href="#" id="openTermsLink" style="color: #38BDF8; text-decoration: underline;">Terms of Service</a> &amp; <a href="#" id="openPrivacyLink" style="color: #38BDF8; text-decoration: underline;">Privacy Policy</a>.
                   </div>
                 </form>
               </div>
@@ -1314,6 +1328,18 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LEGAL / POLICY MODAL ==================== -->
+  <div class="modal-overlay" id="legalModalOverlay" style="display: none; z-index: 10000; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+    <div class="dialog-box" style="max-width: 560px; max-height: 80vh; width: 90%; display: flex; flex-direction: column; background: #0F172A; border: 1px solid #1E293B; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1E293B; padding-bottom: 14px; margin-bottom: 16px;">
+        <h3 class="dialog-title" id="legalModalTitle" style="margin: 0; font-size: 18px; color: #F8FAFC;">Terms of Service</h3>
+        <button class="top-icon-btn" id="closeLegalModalBtn" style="width: 32px; height: 32px; background: #1E293B; border-radius: 50%; color: #94A3B8; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+      </div>
+      <div class="page-scroll" id="legalModalContent" style="flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.7; color: #CBD5E1; text-align: left; padding-right: 8px;">
       </div>
     </div>
   </div>
