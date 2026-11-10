@@ -2518,9 +2518,11 @@ async function checkPostingPermissionAsync() {
   const lockedView = document.getElementById("lockedPostingView");
   const uploadGrid = document.getElementById("uploadFormGrid");
   const badge = document.getElementById("accountHandleBadge");
+  const handleText = document.getElementById("accountHandleText");
 
   if (!FirebaseService.currentUid) {
-    if (badge) badge.textContent = "Sign in on the Profile tab first";
+    if (handleText) handleText.textContent = "Sign in on the Profile tab first";
+    else if (badge) badge.textContent = "Sign in on the Profile tab first";
     if (uploadGrid) uploadGrid.style.display = "none";
     if (lockedView) lockedView.style.display = "flex";
     return;
@@ -2542,9 +2544,11 @@ function applyPermissionUI(profile) {
   const lockedView = document.getElementById("lockedPostingView");
   const uploadGrid = document.getElementById("uploadFormGrid");
   const badge = document.getElementById("accountHandleBadge");
+  const handleText = document.getElementById("accountHandleText");
   const chip = document.getElementById("creatorHandleChip");
 
-  if (badge) badge.textContent = `Your account: ${profile.Handle}`;
+  if (handleText) handleText.textContent = `Your account: ${profile.Handle}`;
+  else if (badge) badge.textContent = `Your account: ${profile.Handle}`;
   if (chip) chip.textContent = profile.Handle;
 
   const allowed = Boolean(profile.CanPost);
@@ -5856,10 +5860,18 @@ function setupEventListeners() {
     .getElementById("refreshApprovalBtn")
     ?.addEventListener("click", async (e) => {
       const btn = e.currentTarget;
-      btn.textContent = "Checking...";
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = `
+        <div class="spinner-small" style="width: 14px; height: 14px; border-width: 2px;"></div>
+        <span>Checking...</span>
+      `;
       btn.disabled = true;
       await checkPostingPermissionAsync();
-      btn.textContent = "Check Approval Status";
+      const profile = FirebaseService.currentUser;
+      if (profile && !profile.CanPost) {
+        showToast("Account still awaiting creator approval.");
+      }
+      btn.innerHTML = originalHtml;
       btn.disabled = false;
     });
 

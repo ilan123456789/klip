@@ -1117,50 +1117,191 @@ body.wide-web-mode .klip-video-element {
   filter: drop-shadow(0 6px 16px rgba(255, 45, 85, 0.45));
 }
 
-/* ==================== CREATE / POST PAGE ==================== */
+/* ==================== CREATE / POST PAGE (CREATOR APPROVAL) ==================== */
 .locked-posting-view {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 28px;
+  padding: 24px 18px;
+  background: radial-gradient(circle at 50% 25%, rgba(14, 165, 233, 0.08) 0%, rgba(11, 14, 23, 1) 70%);
+}
+
+.locked-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 34px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .locked-icon-circle {
-  width: 76px;
-  height: 76px;
-  border-radius: 38px;
-  background-color: var(--bg-card);
-  border: 1.5px solid var(--border-color);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(56, 189, 248, 0.22) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 32px rgba(56, 189, 248, 0.25), inset 0 0 16px rgba(56, 189, 248, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.locked-icon-circle svg {
+  filter: drop-shadow(0 2px 10px rgba(56, 189, 248, 0.5));
 }
 
 .locked-title {
   color: #FFFFFF;
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+  line-height: 1.25;
 }
 
 .locked-desc {
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.4;
-  max-width: 340px;
+  color: #94A3B8;
+  font-size: 13.5px;
+  line-height: 1.55;
+  max-width: 290px;
+  margin-bottom: 18px;
 }
 
 .account-handle-badge {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 10px 16px;
-  color: var(--text-slate);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  color: #E2E8F0;
   font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.account-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #F59E0B;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.7);
+  animation: pulse-amber 2s infinite;
+}
+
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.locked-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.whatsapp-approval-btn {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-decoration: none;
+  box-shadow: 0 8px 24px -4px rgba(37, 211, 102, 0.42), 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.whatsapp-approval-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 12px 28px -4px rgba(37, 211, 102, 0.55), 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.whatsapp-approval-btn:active {
+  transform: scale(0.98);
+}
+
+.whatsapp-btn-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  fill: #FFFFFF;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+}
+
+.whatsapp-btn-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.whatsapp-btn-title {
+  font-size: 14.5px;
   font-weight: 700;
+  line-height: 1.25;
+  color: #FFFFFF;
+}
+
+.whatsapp-btn-sub {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.92;
+  margin-top: 2px;
+  color: #E6FBF0;
+}
+
+.check-approval-btn {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 13px 20px;
+  color: #F1F5F9;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.check-approval-btn:hover {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38BDF8;
+}
+
+.check-approval-btn:active {
+  transform: scale(0.98);
+}
+
+.check-approval-icon {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
 }
 
 .secondary-btn {

@@ -226,24 +226,48 @@
           <section class="page-view" id="page-CreatePage">
             <!-- View 1: Locked Posting View (CanPost == false) -->
             <div class="locked-posting-view" id="lockedPostingView">
-              <div class="locked-icon-circle">
-                <svg viewBox="0 0 24 24" width="30" height="30" fill="#38BDF8">
-                  <path
-                    d="M17,9 H16 V7 C16,4.79 14.21,3 12,3 C9.79,3 8,4.79 8,7 V9 H7 C5.9,9 5,9.9 5,11 V19 C5,20.1 5.9,21 7,21 H17 C18.1,21 19,20.1 19,19 V11 C19,9.9 18.1,9 17,9 Z M10,7 C10,5.9 10.9,5 12,5 C13.1,5 14,5.9 14,7 V9 H10 V7 Z" />
-                </svg>
+              <div class="locked-card">
+                <div class="locked-icon-circle">
+                  <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="3" ry="3"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    <circle cx="12" cy="16" r="1.5" fill="#38BDF8"></circle>
+                  </svg>
+                </div>
+
+                <div class="locked-title">Creator Approval Required</div>
+                <div class="locked-desc">
+                  To keep Klip kosher and curated, posting is reserved for approved creators. Contact us on WhatsApp to verify your account and start sharing.
+                </div>
+
+                <div class="account-handle-badge" id="accountHandleBadge">
+                  <span class="account-badge-dot"></span>
+                  <span id="accountHandleText">Your account: @user</span>
+                </div>
+
+                <div class="locked-actions-stack">
+                  <a href="https://wa.me/19024490799?text=Hi%2C%20I%20would%20like%20to%20request%20creator%20posting%20approval%20for%20my%20Klip%20account" 
+                     target="_blank" rel="noopener noreferrer" 
+                     class="whatsapp-approval-btn" 
+                     aria-label="Contact on WhatsApp for creator approval">
+                    <svg viewBox="0 0 24 24" class="whatsapp-btn-icon" fill="currentColor">
+                      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c4.54 0 8.24 3.7 8.24 8.24 0 2.2-.86 4.28-2.42 5.83a8.18 8.18 0 0 1-5.82 2.41c-1.45 0-2.88-.38-4.14-1.12l-.3-.18-3.08.81.82-3-.19-.31a8.21 8.21 0 0 1-1.26-4.44c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.25-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.17 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.19-.48-.31"/>
+                    </svg>
+                    <div class="whatsapp-btn-labels">
+                      <span class="whatsapp-btn-title">Ask for Approval on WhatsApp</span>
+                      <span class="whatsapp-btn-sub">+1 902 449 0799 · Fast Response</span>
+                    </div>
+                  </a>
+
+                  <button class="check-approval-btn" id="refreshApprovalBtn">
+                    <svg viewBox="0 0 24 24" class="check-approval-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span>Check Approval Status</span>
+                  </button>
+                </div>
               </div>
-              <div class="locked-title">Creator Approval Required</div>
-              <div class="locked-desc">
-                To keep Klip kosher and curated, posting is limited to approved creators. Please contact me on WhatsApp at <a href="https://wa.me/19024490799" target="_blank" rel="noopener noreferrer" style="color: #25D366; font-weight: 700; text-decoration: underline;">+1 902 449 0799</a> to ask for approval.
-              </div>
-              <div class="account-handle-badge" id="accountHandleBadge">Your account: @user</div>
-              <a href="https://wa.me/19024490799" target="_blank" rel="noopener noreferrer" class="primary-btn" style="background-color: #25D366; color: #FFFFFF; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 12px; margin-top: 6px;">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c4.54 0 8.24 3.7 8.24 8.24 0 2.2-.86 4.28-2.42 5.83a8.18 8.18 0 0 1-5.82 2.41c-1.45 0-2.88-.38-4.14-1.12l-.3-.18-3.08.81.82-3-.19-.31a8.21 8.21 0 0 1-1.26-4.44c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.25-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.17 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.19-.48-.31"/>
-                </svg>
-                Contact on WhatsApp (+1 902 449 0799)
-              </a>
-              <button class="secondary-btn" id="refreshApprovalBtn" style="margin-top: 6px;">Check Approval Status</button>
             </div>
 
             <!-- View 2: Studio Upload Form (CanPost == true) -->
