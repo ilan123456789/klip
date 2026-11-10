@@ -2901,6 +2901,9 @@ async function onProfilePageAppearing() {
 }
 
 async function refreshProfileViewAsync() {
+  if (!FirebaseService.isLoggedIn) {
+    await FirebaseService.tryRestoreSessionAsync();
+  }
   const guestView = document.getElementById("guestAuthView");
   const loggedInView = document.getElementById("loggedInProfileView");
 

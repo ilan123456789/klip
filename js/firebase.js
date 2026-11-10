@@ -799,30 +799,9 @@ class FirebaseServiceClass {
         if (response.ok) {
           data = await response.json().catch(() => null);
         }
+      }
 
-        // One-time seamless migration from legacy client-side refreshToken into Server Vault + JWE cookie
-        if ((!data || !data.authenticated || !data.uid) && this._legacyRefreshToken) {
-          const tokenToMigrate = this._legacyRefreshToken;
-          this._legacyRefreshToken = null;
-          try {
-            const migRes = await fetch("/api/auth/migrate", {
-              method: "POST",
-              credentials: "same-origin",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                refreshToken: tokenToMigrate,
-                uid: this.currentUid || "",
-                displayName: localStorage.getItem("fb_display_name") || "",
-              }),
-            });
-            if (migRes.ok) {
-              data = await migRes.json();
-            }
-          } catch {
-            /* ignore migration error */
-          }
-        }
-      } else {
+      if (!data || !data.authenticated || !data.uid) {
         const idToken = await this._getDirectIdTokenAsync();
         const vault = await this._loadClientVaultAsync();
         if (idToken && vault && vault.uid) {
@@ -918,6 +897,16 @@ class FirebaseServiceClass {
           return { success: false, error: msg };
         }
         uid = doc.uid;
+        if (doc.refreshToken || doc.idToken) {
+          const expiresIn = Number(doc.expiresIn) || 3600;
+          await this._saveClientVaultAsync({
+            uid,
+            refreshToken: doc.refreshToken || "",
+            idToken: doc.idToken || "",
+            tokenExpUtc: Date.now() + Math.max(300, expiresIn - 300) * 1000,
+            displayName: displayNameMeta,
+          });
+        }
       } else {
         const fbRes = await fetch(
           `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${_decodeRt(0)}`,
@@ -1025,6 +1014,16 @@ class FirebaseServiceClass {
         }
         uid = doc.uid;
         authDisplayName = doc.displayName || "";
+        if (doc.refreshToken || doc.idToken) {
+          const expiresIn = Number(doc.expiresIn) || 3600;
+          await this._saveClientVaultAsync({
+            uid,
+            refreshToken: doc.refreshToken || "",
+            idToken: doc.idToken || "",
+            tokenExpUtc: Date.now() + Math.max(300, expiresIn - 300) * 1000,
+            displayName: authDisplayName,
+          });
+        }
       } else {
         const fbRes = await fetch(
           `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${_decodeRt(0)}`,
