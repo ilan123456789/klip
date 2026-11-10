@@ -533,10 +533,8 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
       videoEl.setAttribute("muted", "");
     }
 
-    // IMPORTANT: no `src` is attached at build time. The carousel loader
-    // (activateSlideInCarousel) is the only thing that attaches/detaches
-    // sources, so hidden carousels and far-away slides never download.
-    videoEl.preload = "none";
+    // For the very first slide, prime with preload="auto"; others wait for activateSlideInCarousel
+    videoEl.preload = slideIndex === 0 ? "auto" : "none";
     slide.appendChild(videoEl);
 
     // Buffering Spinner
@@ -1355,9 +1353,13 @@ function attachVideoToElement(v, src) {
       const hls = new window.Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 30,
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
+        startFragPrefetch: true,
+        progressive: true,
+        backBufferLength: 15,
+        maxBufferLength: 15,
+        maxMaxBufferLength: 30,
+        testBandwidth: false,
+        fpsDroppedMonitoring: false,
       });
       hls.loadSource(src);
       hls.attachMedia(v);
@@ -2317,12 +2319,12 @@ function activateSlideInCarousel(carouselEl, itemsList, forcedActiveSlide = null
         v.dataset.active = "1";
 
         if (!v.getAttribute("src") && !v._hlsInstance && v.dataset.src) {
-          v.preload = "metadata";
+          v.preload = "auto";
           attachVideoToElement(v, v.dataset.src);
           v.load();
           v._klipShowSpinner?.();
-        } else if (v.preload !== "metadata" && v.preload !== "auto") {
-          v.preload = "metadata";
+        } else if (v.preload !== "auto") {
+          v.preload = "auto";
         }
 
         if (klip) {
@@ -2359,15 +2361,14 @@ function activateSlideInCarousel(carouselEl, itemsList, forcedActiveSlide = null
         if (!v.paused) v.pause();
 
         if (slide === nextVideoSlide) {
-          // Bandwidth Saver: Only pre-buffer metadata for the upcoming slide instead of full auto-download!
-          // This saves tens of gigabytes across sessions when users scroll past klips.
+          // Preload upcoming video with HLS attachment so it starts buffering immediately
           if (!activeVideo || activeVideo.readyState >= 2) {
-            if (!v.getAttribute("src") && v.dataset.src) {
+            if (!v._hlsInstance && !v.getAttribute("src") && v.dataset.src) {
               v.muted = true;
-              v.preload = "metadata";
-              v.src = v.dataset.src;
-            } else if (v.preload !== "metadata" && v.preload !== "auto") {
-              v.preload = "metadata";
+              v.preload = "auto";
+              attachVideoToElement(v, v.dataset.src);
+            } else if (v.preload !== "auto") {
+              v.preload = "auto";
             }
           }
         } else if (slide === prevVideoSlide && v.getAttribute("src") && v.networkState === 1) {
@@ -2392,9 +2393,9 @@ function activateSlideInCarousel(carouselEl, itemsList, forcedActiveSlide = null
     const nextVid = nextVideoSlide?.querySelector("video.klip-video-element");
     if (nextVid && nextVid.dataset.active !== "1") {
       nextVid.muted = true;
-      if (!nextVid.getAttribute("src") && nextVid.dataset.src) {
-        nextVid.preload = "metadata";
-        nextVid.src = nextVid.dataset.src;
+      if (!nextVid._hlsInstance && !nextVid.getAttribute("src") && nextVid.dataset.src) {
+        nextVid.preload = "auto";
+        attachVideoToElement(nextVid, nextVid.dataset.src);
       }
     }
   };
