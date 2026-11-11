@@ -2851,6 +2851,7 @@ class RecommendationServiceClass {
             TagScores: parsed.TagScores || {},
             CategoryScores: parsed.CategoryScores || {},
             CreatorScores: parsed.CreatorScores || {},
+            SoundScores: parsed.SoundScores || {},
             WatchHistory: parsed.WatchHistory || {},
             VideoCompletionCounts: parsed.VideoCompletionCounts || {},
             LastUpdatedUtc: parsed.LastUpdatedUtc || new Date().toISOString(),
@@ -2866,6 +2867,7 @@ class RecommendationServiceClass {
       TagScores: {},
       CategoryScores: {},
       CreatorScores: {},
+      SoundScores: {},
       WatchHistory: {},
       VideoCompletionCounts: {},
       LastUpdatedUtc: new Date().toISOString(),
@@ -2950,6 +2952,19 @@ class RecommendationServiceClass {
       }
     }
 
+    // Update sound affinity
+    if (video.SoundTitle) {
+      const cleanSound = String(video.SoundTitle).trim().toLowerCase();
+      if (cleanSound && !cleanSound.startsWith("original sound -")) {
+        const sScore = Number(getCaseInsensitive(profile.SoundScores || {}, cleanSound) || 0);
+        setCaseInsensitive(
+          profile.SoundScores,
+          cleanSound,
+          clampVal(sScore + weight * 0.5, -40, 160)
+        );
+      }
+    }
+
     this.saveProfile(profile);
   }
 
@@ -3005,6 +3020,119 @@ class RecommendationServiceClass {
     return "Jewish Life";
   }
 
+  scoreVideo(video, profile, nowMs, jitterRange = 30.0, avoidFirstVideoId = null, recentTopIds = []) {
+    // 1. Personalization Score (0 - 150)
+    let personalScore = 15.0;
+    const category = this.inferCategory(video);
+
+    const catScore = getCaseInsensitive(profile.CategoryScores, category);
+    if (catScore !== undefined) {
+      personalScore += clampVal(Number(catScore) * 0.45, -20, 50);
+    }
+
+    if (video.CreatorUid) {
+      const crScore = getCaseInsensitive(profile.CreatorScores, video.CreatorUid);
+      if (crScore !== undefined) {
+        personalScore += clampVal(Number(crScore) * 0.40, -20, 35);
+      }
+      // Rewarded creator loyalty if previously completed videos by this creator
+      const completions = Number(profile.VideoCompletionCounts?.[video.Id] || 0);
+      if (completions > 0) {
+        personalScore += Math.min(25, completions * 12);
+      }
+    }
+
+    if (Array.isArray(video.Tags) && video.Tags.length > 0) {
+      let tagSum = 0;
+      for (const tag of video.Tags) {
+        const clean = String(tag || "")
+          .trim()
+          .replace(/^#+/, "")
+          .toLowerCase();
+        const tScore = getCaseInsensitive(profile.TagScores, clean);
+        if (tScore !== undefined) {
+          tagSum += Number(tScore);
+        }
+      }
+      personalScore += clampVal(tagSum * 0.30, -20, 40);
+    }
+
+    if (video.SoundTitle) {
+      const cleanSound = String(video.SoundTitle).trim().toLowerCase();
+      const sScore = getCaseInsensitive(profile.SoundScores, cleanSound);
+      if (sScore !== undefined) {
+        personalScore += clampVal(Number(sScore) * 0.25, -15, 30);
+      }
+    }
+    personalScore = clampVal(personalScore + Math.random() * jitterRange, 0, 150);
+
+    // 2. Trending Score + Engagement Velocity
+    const likes = Number(video.LikesCount) || 0;
+    const bookmarks = Number(video.BookmarksCount) || 0;
+    const views = Number(video.ViewsCount) || 0;
+    const comments = Number(video.CommentsCount) || 0;
+
+    const engagementRate = (likes * 3.5 + bookmarks * 5.0 + comments * 4.0) / Math.sqrt(views + 6);
+    const uploadedMs = video.CreatedAtUnix ? video.CreatedAtUnix * 1000 : nowMs;
+    const hoursAgo = Math.max(0.2, (nowMs - uploadedMs) / (1000 * 3600));
+    const velocity = (likes * 4.0 + bookmarks * 5.5 + comments * 4.0 + views * 0.25) / Math.pow(hoursAgo + 2, 0.7);
+
+    const trendingScore = clampVal(
+      Math.log10(views * 0.4 + likes * 3.0 + bookmarks * 4.5 + comments * 3.5 + 1) * 26.0 +
+        velocity * 12.0 +
+        engagementRate * 7.0 +
+        Math.random() * jitterRange,
+      10,
+      150
+    );
+
+    // 3. Freshness / New Creator Exposure Boost
+    let freshnessScore = 20.0;
+    if (video.CreatedAtUnix > 0) {
+      if (hoursAgo < 12) freshnessScore += 60;
+      else if (hoursAgo < 24) freshnessScore += 40;
+      else if (hoursAgo < 72) freshnessScore += 20;
+    }
+    if (views < 10) {
+      freshnessScore += 25; // Exposure boost for new creators/uploads
+    }
+    freshnessScore = clampVal(freshnessScore + Math.random() * jitterRange, 0, 150);
+
+    // 4. Anti-Fatigue / Recency Penalty
+    let fatiguePenalty = 0;
+    const lastWatchedRaw = profile.WatchHistory[video.Id];
+    if (lastWatchedRaw) {
+      const lastWatchedMs = Date.parse(lastWatchedRaw);
+      if (Number.isFinite(lastWatchedMs)) {
+        const hoursSinceWatch = (nowMs - lastWatchedMs) / (1000 * 3600);
+        if (hoursSinceWatch < 1.0) fatiguePenalty = 50.0;
+        else if (hoursSinceWatch < 6.0) fatiguePenalty = 30.0;
+        else if (hoursSinceWatch < 24.0) fatiguePenalty = 15.0;
+      }
+    }
+    if (avoidFirstVideoId && video.Id === avoidFirstVideoId) {
+      fatiguePenalty += 45.0;
+    } else if (Array.isArray(recentTopIds) && recentTopIds.slice(0, 3).includes(video.Id)) {
+      fatiguePenalty += 25.0;
+    }
+
+    const totalScore =
+      personalScore * 0.48 +
+      trendingScore * 0.28 +
+      freshnessScore * 0.24 -
+      fatiguePenalty +
+      Math.random() * jitterRange;
+
+    return {
+      video,
+      totalScore,
+      personalScore,
+      trendingScore,
+      freshnessScore,
+      category,
+    };
+  }
+
   rankForYouFeed(candidateKlips, avoidFirstVideoId = null, isExplicitRefresh = false) {
     // STRICT PRIVACY / KOSHER RULE: Female-only videos NEVER circulate in FYP
     const allCandidates = (candidateKlips || []).filter((k) => !k.IsFemaleOnly);
@@ -3035,105 +3163,12 @@ class RecommendationServiceClass {
 
     const profile = this.getProfile();
     const nowMs = Date.now();
-
-    // Higher randomness temperature on explicit user refresh / browser reload so every refresh feels fresh
     const jitterRange = isExplicitRefresh ? 65.0 : 38.0;
 
-    // Score each candidate
-    const scoredList = [];
-
-    for (const video of allCandidates) {
-      // 1. Personalization Score (0 - 100) + stochastic exploration
-      let personalScore = 15.0;
-      const category = this.inferCategory(video);
-
-      const catScore = getCaseInsensitive(profile.CategoryScores, category);
-      if (catScore !== undefined) {
-        personalScore += clampVal(Number(catScore) * 0.4, -20, 45);
-      }
-
-      if (video.CreatorUid) {
-        const crScore = getCaseInsensitive(profile.CreatorScores, video.CreatorUid);
-        if (crScore !== undefined) {
-          personalScore += clampVal(Number(crScore) * 0.35, -20, 30);
-        }
-      }
-
-      if (Array.isArray(video.Tags) && video.Tags.length > 0) {
-        let tagSum = 0;
-        for (const tag of video.Tags) {
-          const clean = String(tag || "")
-            .trim()
-            .replace(/^#+/, "")
-            .toLowerCase();
-          const tScore = getCaseInsensitive(profile.TagScores, clean);
-          if (tScore !== undefined) {
-            tagSum += Number(tScore);
-          }
-        }
-        personalScore += clampVal(tagSum * 0.25, -20, 35);
-      }
-      personalScore = clampVal(personalScore + Math.random() * jitterRange, 0, 140);
-
-      // 2. Trending Score (0 - 100) + stochastic exploration (matching mobile RecommendationService.cs)
-      const engagement =
-        (Number(video.ViewsCount) || 0) * 0.5 +
-        video.LikesCount * 3.0 +
-        video.BookmarksCount * 4.0;
-      const trendingScore = clampVal(
-        Math.log10(engagement + 1) * 35.0 + Math.random() * jitterRange,
-        10,
-        140
-      );
-
-      // 3. Freshness / New Creator Exposure Boost (0 - 100) + stochastic exploration
-      let freshnessScore = 20.0;
-      if (video.CreatedAtUnix > 0) {
-        const uploadedMs = video.CreatedAtUnix * 1000;
-        const hoursAgo = (nowMs - uploadedMs) / (1000 * 3600);
-        if (hoursAgo < 12) freshnessScore += 60;
-        else if (hoursAgo < 24) freshnessScore += 40;
-        else if (hoursAgo < 72) freshnessScore += 20;
-      }
-      if ((Number(video.ViewsCount) || 0) < 5) {
-        freshnessScore += 25;
-      }
-      freshnessScore = clampVal(freshnessScore + Math.random() * jitterRange, 0, 140);
-
-      // 4. Anti-Fatigue / Recency Penalty
-      let fatiguePenalty = 0;
-      const lastWatchedRaw = profile.WatchHistory[video.Id];
-      if (lastWatchedRaw) {
-        const lastWatchedMs = Date.parse(lastWatchedRaw);
-        if (Number.isFinite(lastWatchedMs)) {
-          const hoursSinceWatch = (nowMs - lastWatchedMs) / (1000 * 3600);
-          if (hoursSinceWatch < 1.0) fatiguePenalty = 45.0;
-          else if (hoursSinceWatch < 6.0) fatiguePenalty = 25.0;
-          else if (hoursSinceWatch < 24.0) fatiguePenalty = 12.0;
-        }
-      }
-      if (video.Id === effectiveAvoidFirstId) {
-        fatiguePenalty += 45.0;
-      } else if (recentTopIds.slice(0, 3).includes(video.Id)) {
-        fatiguePenalty += 25.0;
-      }
-
-      const totalScore =
-        personalScore * 0.5 +
-        trendingScore * 0.25 +
-        freshnessScore * 0.25 -
-        fatiguePenalty +
-        Math.random() * jitterRange;
-
-      scoredList.push({
-        video,
-        totalScore,
-        personalScore,
-        trendingScore,
-        freshnessScore,
-        category,
-      });
-    }
+    // Score each candidate with upgraded algorithm
+    const scoredList = allCandidates.map((video) =>
+      this.scoreVideo(video, profile, nowMs, jitterRange, effectiveAvoidFirstId, recentTopIds)
+    );
 
     // Divide into 4 blended sources:
     const sortedByTotal = [...scoredList].sort((a, b) => b.totalScore - a.totalScore);
@@ -3163,7 +3198,6 @@ class RecommendationServiceClass {
     const pickedIds = new Set();
 
     // Top-K tournament selection within each pool so top-scored videos are favored
-    // while every browser refresh produces a fresh algorithmic permutation
     const tryAdd = (pool) => {
       const unpicked = pool.filter((k) => !pickedIds.has(k.Id));
       if (unpicked.length === 0) return false;
@@ -3207,7 +3241,6 @@ class RecommendationServiceClass {
     }
 
     // Enforce Creator Spacing Rule: Avoid consecutive videos from the same creator
-    // Pick a random valid swap target so minority-creator videos don't lock into fixed slots
     for (let i = 0; i < finalResult.length - 1; i++) {
       if (
         finalResult[i].CreatorUid &&
@@ -3267,6 +3300,60 @@ class RecommendationServiceClass {
     }
 
     return finalResult;
+  }
+
+  /**
+   * Discover Feed: 2-column infinite stream powered by the upgraded recommendation algorithm.
+   * Supports infinite scrolling batches (goes "on and on and on") with dynamic perturbation.
+   */
+  rankDiscoverFeed(candidateKlips, batchIndex = 0, batchSize = 24) {
+    const allCandidates = (candidateKlips || []).filter((k) => !k.IsFemaleOnly);
+    if (allCandidates.length === 0) return [];
+
+    const profile = this.getProfile();
+    const nowMs = Date.now();
+    // Exploration temperature increases with depth so infinite scrolling keeps surfacing unexpected gems
+    const jitterRange = 32.0 + (batchIndex % 5) * 10.0;
+
+    const scored = allCandidates.map((video) => {
+      const base = this.scoreVideo(video, profile, nowMs, jitterRange);
+      // For subsequent batches, introduce cycle perturbation to create endless fresh stream
+      const perturbation = batchIndex > 0 ? (Math.sin(video.Id.charCodeAt(0) * (batchIndex + 1)) * 30.0) : 0;
+      return {
+        ...base,
+        totalScore: base.totalScore + perturbation,
+      };
+    });
+
+    // Sort by algorithmic score
+    scored.sort((a, b) => b.totalScore - a.totalScore);
+
+    // Dynamic rotation to allow infinite scrolling:
+    const totalCount = scored.length;
+    const startIndex = (batchIndex * batchSize) % totalCount;
+    const batchList = [];
+
+    for (let i = 0; i < batchSize; i++) {
+      const idx = (startIndex + i) % totalCount;
+      batchList.push(scored[idx].video);
+    }
+
+    // Enforce 2-column creator spacing: don't put the same creator side-by-side or stacked immediately
+    for (let i = 0; i < batchList.length - 1; i++) {
+      if (batchList[i].CreatorUid && batchList[i].CreatorUid === batchList[i + 1].CreatorUid) {
+        // Find a different creator to swap
+        for (let j = i + 2; j < batchList.length; j++) {
+          if (batchList[j].CreatorUid !== batchList[i].CreatorUid) {
+            const tmp = batchList[i + 1];
+            batchList[i + 1] = batchList[j];
+            batchList[j] = tmp;
+            break;
+          }
+        }
+      }
+    }
+
+    return batchList;
   }
 }
 

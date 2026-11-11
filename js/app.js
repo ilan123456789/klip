@@ -88,6 +88,11 @@ const state = {
   followListUid: "",
   followListMode: "following",
 
+  // DiscoverPage state
+  discoverKlips: [],
+  discoverBatchIndex: 0,
+  isDiscoverLoading: false,
+
   // SearchPage state
   searchActiveTab: "All", // "All" | "Accounts" | "Klips"
   searchAllKlips: [],
@@ -228,6 +233,8 @@ async function switchRootTab(tabId) {
     } else {
       await onMainPageAppearing();
     }
+  } else if (tabId === "DiscoverPage") {
+    await onDiscoverPageAppearing();
   } else if (tabId === "SearchPage") {
     await onSearchPageAppearing();
   } else if (tabId === "CreatePage") {
@@ -259,6 +266,8 @@ async function pushSubpage(pageId, params = {}) {
     await onFollowListAppearing();
   } else if (pageId === "InboxPage") {
     await onInboxAppearing();
+  } else if (pageId === "DiscoverPage") {
+    await onDiscoverPageAppearing();
   } else if (pageId === "SearchPage") {
     await onSearchPageAppearing(params.query);
   } else if (pageId === "VideoDetailPage") {
@@ -3011,10 +3020,12 @@ function bindProfileUI(profile) {
   }
 }
 
-function renderKlipsThumbnailGrid(gridEl, klipsList, playlistSource, showCreatorHandle = false) {
+function renderKlipsThumbnailGrid(gridEl, klipsList, playlistSource, showCreatorHandle = false, append = false) {
   if (!gridEl) return;
-  releaseVideosIn(gridEl);
-  gridEl.innerHTML = "";
+  if (!append) {
+    releaseVideosIn(gridEl);
+    gridEl.innerHTML = "";
+  }
 
   klipsList.forEach((klip, index) => {
     const tile = document.createElement("div");
@@ -3972,6 +3983,87 @@ function renderSearchHistory() {
       });
     });
   }
+}
+
+// ==================== DISCOVER PAGE ====================
+async function onDiscoverPageAppearing(isRefresh = false) {
+  const gridEl = document.getElementById("discoverKlipsGrid");
+  setupDiscoverInfiniteScroll();
+
+  if (isRefresh || state.discoverKlips.length === 0) {
+    state.discoverKlips = [];
+    state.discoverBatchIndex = 0;
+    if (gridEl) {
+      releaseVideosIn(gridEl);
+      gridEl.innerHTML = "";
+    }
+  }
+
+  if (state.discoverKlips.length > 0) {
+    return;
+  }
+
+  await loadMoreDiscoverKlips();
+}
+
+async function loadMoreDiscoverKlips() {
+  if (state.isDiscoverLoading) return;
+  state.isDiscoverLoading = true;
+
+  const gridEl = document.getElementById("discoverKlipsGrid");
+  const loaderEl = document.getElementById("discoverInfiniteLoader");
+  if (loaderEl) loaderEl.style.display = "flex";
+
+  try {
+    let allKlips = FirebaseService.getCachedKlipsSnapshot();
+    if (!allKlips || allKlips.length === 0) {
+      allKlips = await FirebaseService.getFeedKlipsAsync(false);
+    }
+
+    const batch = RecommendationService.rankDiscoverFeed(
+      allKlips,
+      state.discoverBatchIndex,
+      24
+    );
+
+    if (batch && batch.length > 0) {
+      state.discoverKlips.push(...batch);
+      state.discoverBatchIndex++;
+
+      if (gridEl) {
+        renderKlipsThumbnailGrid(
+          gridEl,
+          batch,
+          state.discoverKlips,
+          true,
+          true
+        );
+      }
+    }
+  } catch (err) {
+    console.error("[Discover] Failed to load discover batch:", err);
+  } finally {
+    state.isDiscoverLoading = false;
+    if (loaderEl) loaderEl.style.display = "none";
+  }
+}
+
+function setupDiscoverInfiniteScroll() {
+  const container = document.getElementById("discoverScrollContainer");
+  if (!container || container.dataset.scrollBound === "true") return;
+  container.dataset.scrollBound = "true";
+
+  container.addEventListener(
+    "scroll",
+    () => {
+      const distanceToBottom =
+        container.scrollHeight - (container.scrollTop + container.clientHeight);
+      if (distanceToBottom < 450 && !state.isDiscoverLoading) {
+        loadMoreDiscoverKlips();
+      }
+    },
+    { passive: true }
+  );
 }
 
 async function onSearchPageAppearing(initialQuery) {
@@ -6061,6 +6153,7 @@ function setupEventListeners() {
       const target = btn.getAttribute("data-nav");
       if (
         target === "MainPage" ||
+        target === "DiscoverPage" ||
         target === "SearchPage" ||
         target === "CreatePage" ||
         target === "InboxPage" ||
@@ -6120,6 +6213,9 @@ function setupEventListeners() {
     ?.addEventListener("click", () => switchHomeFeedTab("ForYou"));
   document
     .getElementById("mainSearchBtn")
+    ?.addEventListener("click", () => pushSubpage("SearchPage"));
+  document
+    .getElementById("discoverSearchBtn")
     ?.addEventListener("click", () => pushSubpage("SearchPage"));
 
   // Carousel Scroll Observers with immediate snap detection & quick debounce

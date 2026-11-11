@@ -55,12 +55,14 @@
           <span>For You Feed</span>
         </button>
 
-        <button class="sidebar-nav-btn" data-nav="SearchPage" aria-label="Search &amp; Discover">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path
-              d="M11,4 C7.13,4 4,7.13 4,11 C4,14.87 7.13,18 11,18 C12.7,18 14.26,17.39 15.47,16.39 L19.29,20.21 C19.68,20.6 20.31,20.6 20.7,20.21 C21.09,19.82 21.09,19.19 20.7,18.8 L16.88,14.98 C17.89,13.77 18.5,12.21 18.5,10.5 C18.5,6.91 15.37,4 11,4 Z M11,6 C13.76,6 16,8.24 16,11 C16,13.76 13.76,16 11,16 C8.24,16 6,13.76 6,11 C6,8.24 8.24,6 11,6 Z" />
+        <button class="sidebar-nav-btn" data-nav="DiscoverPage" aria-label="Discover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
-          <span>Search &amp; Discover</span>
+          <span>Discover</span>
         </button>
 
         <button class="sidebar-nav-btn" data-nav="CreatePage" aria-label="Post Klip" style="display: none;">
@@ -771,7 +773,36 @@
             </div>
           </section>
 
-          <!-- ==================== SUBPAGE: SEARCH / DISCOVER ==================== -->
+          <!-- ==================== ROOT TAB: DISCOVER ==================== -->
+          <section class="page-view" id="page-DiscoverPage">
+            <div class="discover-page-layout">
+              <div class="discover-top-bar">
+                <div class="discover-title-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                  <span>Discover</span>
+                </div>
+                <button class="top-icon-btn" id="discoverSearchBtn" title="Search" aria-label="Search">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="discover-scroll-container" id="discoverScrollContainer">
+                <div class="klips-grid-2col" id="discoverKlipsGrid"></div>
+                <div class="discover-infinite-loader" id="discoverInfiniteLoader">
+                  <div class="discover-loader-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== SUBPAGE: SEARCH ==================== -->
           <section class="page-view" id="page-SearchPage">
             <div class="search-page-layout">
               <div class="search-top-row">
@@ -956,11 +987,12 @@
             <span>Home</span>
           </button>
 
-          <button class="tabbar-item" data-tab="SearchPage" aria-label="Discover">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <button class="tabbar-item" data-tab="DiscoverPage" aria-label="Discover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
             <span>Discover</span>
           </button>
