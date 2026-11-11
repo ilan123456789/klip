@@ -2118,27 +2118,376 @@ body.wide-web-mode .klip-video-element {
   padding: 4px;
 }
 
-.search-filter-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* ==================== SEARCH HISTORY & ENHANCED SEARCH ==================== */
+.search-history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.search-history-container::-webkit-scrollbar {
+  display: none;
+}
+
+.search-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.search-history-title {
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.search-history-clear-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s ease;
+}
+
+.search-history-clear-btn:hover {
+  color: #EF4444;
+}
+
+.search-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: transparent;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.search-history-item:hover {
+  background-color: #131C2E;
+}
+
+.search-history-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-history-arrow-icon {
+  color: #64748B;
+  flex-shrink: 0;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.search-history-item:hover .search-history-arrow-icon {
+  color: #38BDF8;
+  transform: translate(1px, -1px);
+}
+
+.search-history-text {
+  color: #F1F5F9;
+  font-size: 14.5px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-history-remove-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.search-history-remove-btn:hover {
+  color: #EF4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Empty search history suggestions state */
+.search-suggestions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 8px;
+}
+
+.search-suggestions-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-suggestions-title {
+  color: #F8FAFC;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.search-suggestions-subtitle {
+  color: #94A3B8;
+  font-size: 13px;
+}
+
+.search-suggestions-chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.search-filter-pill {
-  border-radius: 10px;
-  padding: 8px 0;
-  background-color: var(--bg-elevated);
-  color: var(--text-muted);
+.search-suggestion-chip {
+  background-color: #131C2E;
+  border: 1px solid #1E293B;
+  border-radius: 20px;
+  padding: 8px 14px;
+  color: #38BDF8;
   font-size: 13px;
-  font-weight: 700;
-  text-align: center;
+  font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.15s ease;
 }
 
-.search-filter-pill.active {
-  background-color: var(--accent-blue);
-  color: var(--bg-dark);
+.search-suggestion-chip:hover {
+  background-color: #1E293B;
+  border-color: #38BDF8;
+  transform: translateY(-1px);
+}
+
+/* Search Section Headers */
+.search-section-header {
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 12px 0 8px;
+}
+
+/* Rectangular Account Card with Far-Right Follow Button */
+.search-account-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.search-account-card:hover {
+  border-color: var(--accent-blue);
+  background-color: #131C2E;
+}
+
+.search-account-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-account-name {
+  color: white;
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-account-handle {
+  color: #38BDF8;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-follow-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  min-width: 86px;
+  transition: all 0.15s ease;
+}
+
+.account-follow-btn:not(.following) {
+  background-color: #38BDF8;
+  color: #0B132B;
+  border: none;
+}
+
+.account-follow-btn:not(.following):hover {
+  background-color: #7DD3FC;
+}
+
+.account-follow-btn.following {
+  background-color: #1E293B;
+  color: #94A3B8;
+  border: 1px solid #334155;
+}
+
+.account-follow-btn.following:hover {
+  color: #EF4444;
+  border-color: #EF4444;
+}
+
+/* Featured Exact Match Account Card with Horizontal 8-Video Carousel */
+.exact-account-card {
+  background-color: #131C2E;
+  border: 1.5px solid #38BDF8;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.12);
+}
+
+.exact-account-top-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.creator-carousel-wrap {
+  position: relative;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.creator-carousel-fog-left {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to right, #131C2E 30%, transparent 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.creator-carousel-fog-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to left, #131C2E 30%, transparent 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.creator-videos-hscroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.creator-videos-hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.creator-video-hthumb {
+  flex: 0 0 102px;
+  height: 146px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background-color: #0F172A;
+  cursor: pointer;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.creator-video-hthumb:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.creator-video-himg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.creator-video-hbadge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.creator-no-videos-note {
+  color: #64748B;
+  font-size: 13px;
+  padding: 12px 6px;
+  font-style: italic;
+}
+
+/* 2-Column Klips Video Grid (Width 2 videos, Height up to 20 videos) */
+.klips-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  content-visibility: auto;
+}
+
+.klips-grid-2col .klip-grid-tile {
+  height: 240px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #0F172A;
 }
 
 .search-results-scroll {

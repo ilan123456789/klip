@@ -788,34 +788,36 @@
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
                   <input type="text" class="search-input" id="searchEntry"
-                    placeholder="Search accounts, Klips, #hashtags..."
-                    aria-label="Search accounts, Klips, and hashtags" />
+                    placeholder="Search accounts or Klips..."
+                    aria-label="Search accounts and Klips" autocomplete="off" />
                   <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear search input"
                     style="display: none;">✕</button>
                 </div>
               </div>
 
-              <div class="search-filter-tabs">
-                <div class="search-filter-pill active" id="searchTabAll">All</div>
-                <div class="search-filter-pill" id="searchTabAccounts">Accounts</div>
-                <div class="search-filter-pill" id="searchTabKlips">Klips</div>
+              <!-- Search History & Suggestions Area (Default when not searching) -->
+              <div class="search-history-container" id="searchHistoryContainer"></div>
+
+              <!-- Empty State Label -->
+              <div class="empty-state-text" id="emptySearchLabel" style="display: none; margin: 30px auto; text-align: center;">
+                No matching accounts or Klips found
               </div>
 
-              <div class="empty-state-text" id="emptySearchLabel" style="display: none; margin: auto;">
-                No matching results found
-              </div>
-
-              <div class="search-results-scroll" id="searchResultsContainer">
-                <!-- Matching Accounts Section -->
+              <!-- Search Results Scroll Area (Shown when query typed) -->
+              <div class="search-results-scroll" id="searchResultsContainer" style="display: none;">
+                <!-- 1. ACCOUNTS SECTION (Always First) -->
                 <div id="searchAccountsSection" style="display: none;">
-                  <div class="section-label" id="searchAccountsHeader">Accounts</div>
+                  <div class="section-label search-section-header" id="searchAccountsHeader">Accounts</div>
+                  <!-- Exact Match Card (with 8-video carousel) -->
+                  <div id="searchExactAccountContainer"></div>
+                  <!-- Other/Similar Accounts Stack -->
                   <div class="user-list-stack" id="searchAccountsList"></div>
                 </div>
 
-                <!-- Matching Klips Section -->
+                <!-- 2. KLIPS SECTION (Always Second) -->
                 <div id="searchKlipsSection" style="display: none;">
-                  <div class="section-label" id="searchKlipsHeader" style="display: none;">Klips</div>
-                  <div class="klips-grid-3col" id="searchResultsGrid"></div>
+                  <div class="section-label search-section-header" id="searchKlipsHeader">Klips</div>
+                  <div class="klips-grid-2col" id="searchResultsGrid"></div>
                 </div>
               </div>
             </div>

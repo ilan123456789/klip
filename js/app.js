@@ -3760,17 +3760,227 @@ async function onInboxAppearing() {
   });
 }
 
-// ==================== SEARCH PAGE CONTROLLER ====================
+// ==================== SEARCH PAGE CONTROLLER & HISTORY ====================
+const SEARCH_HISTORY_KEY = "klip_search_history_v1";
+const RANDOM_SEARCH_TOPICS = [
+  "Torah", "Hasidic", "Chabad", "Simcha", "Shabbos",
+  "Niggun", "Mitzvah", "Wedding", "Kumzitz", "Breslov",
+  "Satmar", "Klezmer", "Jerusalem", "Kotel"
+];
+
+function getSearchHistory() {
+  try {
+    const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addSearchHistory(query) {
+  const term = String(query || "").trim();
+  if (!term || term.length < 2) return;
+  try {
+    let history = getSearchHistory();
+    history = history.filter((item) => item.toLowerCase() !== term.toLowerCase());
+    history.unshift(term);
+    if (history.length > 15) history = history.slice(0, 15);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // ignore
+  }
+}
+
+function removeSearchHistory(term) {
+  if (!term) return;
+  try {
+    let history = getSearchHistory();
+    history = history.filter((item) => item.toLowerCase() !== term.toLowerCase());
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // ignore
+  }
+}
+
+function clearSearchHistory() {
+  try {
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function normalizeSearchText(str) {
+  return String(str || "")
+    .toLowerCase()
+    .replace(/[@#]/g, "")
+    .trim();
+}
+
+function levenshteinDistance(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+function calculateFuzzyScore(text, query) {
+  const t = normalizeSearchText(text);
+  const q = normalizeSearchText(query);
+  if (!t || !q) return 0;
+  if (t === q) return 100;
+  if (t.startsWith(q)) return 90;
+  if (t.includes(q)) return 80;
+  if (q.includes(t)) return 70;
+
+  const tWords = t.split(/\s+/).filter(Boolean);
+  const qWords = q.split(/\s+/).filter(Boolean);
+  let wordMatch = 0;
+  for (const qw of qWords) {
+    for (const tw of tWords) {
+      if (tw === qw) wordMatch += 40;
+      else if (tw.startsWith(qw)) wordMatch += 30;
+      else if (tw.includes(qw)) wordMatch += 20;
+      else {
+        const dist = levenshteinDistance(tw, qw);
+        if (dist <= 2 && Math.max(tw.length, qw.length) >= 4) {
+          wordMatch += 15;
+        }
+      }
+    }
+  }
+  if (wordMatch > 0) return Math.min(65, wordMatch);
+
+  const overallDist = levenshteinDistance(t, q);
+  const maxLen = Math.max(t.length, q.length);
+  if (maxLen >= 4 && overallDist <= 2) return 50;
+  if (maxLen >= 6 && overallDist <= 3) return 40;
+  return 0;
+}
+
+function renderSearchHistory() {
+  const container = document.getElementById("searchHistoryContainer");
+  if (!container) return;
+  const history = getSearchHistory();
+
+  if (history.length > 0) {
+    container.innerHTML = `
+      <div class="search-history-header">
+        <span class="search-history-title">Recent Searches</span>
+        <button class="search-history-clear-btn" id="searchHistoryClearAllBtn" type="button">Clear all</button>
+      </div>
+      <div class="search-history-list">
+        ${history.map((term) => `
+          <div class="search-history-item" data-term="${escapeHtml(term)}">
+            <div class="search-history-left">
+              <svg class="search-history-arrow-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+              <span class="search-history-text">${escapeHtml(term)}</span>
+            </div>
+            <button class="search-history-remove-btn" type="button" aria-label="Remove search" data-remove="${escapeHtml(term)}">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    container.querySelectorAll(".search-history-left").forEach((el) => {
+      el.addEventListener("click", () => {
+        const item = el.closest(".search-history-item");
+        const term = item?.dataset.term || "";
+        if (term) {
+          const input = document.getElementById("searchEntry");
+          if (input) {
+            input.value = term;
+            document.getElementById("searchClearBtn").style.display = "block";
+          }
+          addSearchHistory(term);
+          applySearchFilter(term);
+        }
+      });
+    });
+
+    container.querySelectorAll(".search-history-remove-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const term = btn.dataset.remove || "";
+        removeSearchHistory(term);
+        renderSearchHistory();
+      });
+    });
+
+    document.getElementById("searchHistoryClearAllBtn")?.addEventListener("click", () => {
+      clearSearchHistory();
+      renderSearchHistory();
+    });
+  } else {
+    // Show random suggestions when search history is empty
+    const shuffled = [...RANDOM_SEARCH_TOPICS].sort(() => 0.5 - Math.random()).slice(0, 7);
+    container.innerHTML = `
+      <div class="search-suggestions-wrap">
+        <div class="search-suggestions-header">
+          <div class="search-suggestions-title">Search Klip</div>
+          <div class="search-suggestions-subtitle">Explore kosher clips, rabbis, and Jewish creators:</div>
+        </div>
+        <div class="search-suggestions-chips">
+          ${shuffled.map((topic) => `
+            <button type="button" class="search-suggestion-chip" data-topic="${topic}">
+              <span>🔍</span>
+              <span>Search for ${topic}</span>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+    container.querySelectorAll(".search-suggestion-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const topic = chip.dataset.topic || "";
+        if (topic) {
+          const input = document.getElementById("searchEntry");
+          if (input) {
+            input.value = topic;
+            document.getElementById("searchClearBtn").style.display = "block";
+          }
+          addSearchHistory(topic);
+          applySearchFilter(topic);
+        }
+      });
+    });
+  }
+}
+
 async function onSearchPageAppearing(initialQuery) {
   const searchEntry = document.getElementById("searchEntry");
-  if (typeof initialQuery === "string") {
+  if (typeof initialQuery === "string" && initialQuery.trim()) {
     searchEntry.value = initialQuery;
-    document.getElementById("searchClearBtn").style.display = initialQuery
-      ? "block"
-      : "none";
-    if (initialQuery.trim()) {
-      RecommendationService.recordSearch(initialQuery.trim());
-    }
+    document.getElementById("searchClearBtn").style.display = "block";
+    addSearchHistory(initialQuery.trim());
+    RecommendationService.recordSearch(initialQuery.trim());
   }
 
   const cachedKlips = FirebaseService.getCachedKlipsSnapshot();
@@ -3793,127 +4003,289 @@ async function onSearchPageAppearing(initialQuery) {
 
 function setSearchActiveTab(tab) {
   state.searchActiveTab = tab;
-  document
-    .getElementById("searchTabAll")
-    .classList.toggle("active", tab === "All");
-  document
-    .getElementById("searchTabAccounts")
-    .classList.toggle("active", tab === "Accounts");
-  document
-    .getElementById("searchTabKlips")
-    .classList.toggle("active", tab === "Klips");
-
   applySearchFilter(document.getElementById("searchEntry").value);
 }
 
-function applySearchFilter(rawQuery) {
+async function applySearchFilter(rawQuery) {
   const q = String(rawQuery || "").trim();
-  const qLower = q.toLowerCase();
-  const cleanHandleQ = qLower.replace(/^@/, "");
-
-  state.searchFilteredUsers = !q
-    ? [...state.searchAllUsers]
-    : state.searchAllUsers.filter((u) => {
-      const h = (u.Handle || "").toLowerCase();
-      const dn = (u.DisplayName || "").toLowerCase();
-      return (
-        h.includes(qLower) ||
-        (cleanHandleQ && h.includes(cleanHandleQ)) ||
-        dn.includes(qLower) ||
-        (cleanHandleQ && dn.includes(cleanHandleQ))
-      );
-    });
-
-  state.searchFilteredKlips = !q
-    ? [...state.searchAllKlips]
-    : state.searchAllKlips.filter((k) => {
-      const cap = (k.Caption || "").toLowerCase();
-      const ch = (k.CreatorHandle || "").toLowerCase();
-      const tags = (k.hashtags || "").toLowerCase();
-      return (
-        cap.includes(qLower) ||
-        ch.includes(qLower) ||
-        (cleanHandleQ && ch.includes(cleanHandleQ)) ||
-        tags.includes(qLower)
-      );
-    });
-
-  const hasUsers = state.searchFilteredUsers.length > 0;
-  const hasKlips = state.searchFilteredKlips.length > 0;
-
+  const historyContainer = document.getElementById("searchHistoryContainer");
+  const resultsContainer = document.getElementById("searchResultsContainer");
+  const emptyLabel = document.getElementById("emptySearchLabel");
   const accountsSection = document.getElementById("searchAccountsSection");
-  const accountsHeader = document.getElementById("searchAccountsHeader");
+  const exactContainer = document.getElementById("searchExactAccountContainer");
   const accountsList = document.getElementById("searchAccountsList");
   const klipsSection = document.getElementById("searchKlipsSection");
-  const klipsHeader = document.getElementById("searchKlipsHeader");
   const klipsGrid = document.getElementById("searchResultsGrid");
-  const emptyLabel = document.getElementById("emptySearchLabel");
 
-  // Render Accounts
-  accountsList.innerHTML = "";
-  state.searchFilteredUsers.forEach((u) => {
-    const row = document.createElement("div");
-    row.className = "user-row-card";
-    row.innerHTML = `
-      <div class="user-row-avatar">
-        ${u.hasAvatar
-        ? `<img src="${escapeHtml(u.AvatarUrl)}" alt="" />`
-        : `<span>${escapeHtml(u.Initials)}</span>`
-      }
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-        <span style="color: white; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-          ${escapeHtml(u.DisplayName)}
-        </span>
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
-          <span style="color: #38BDF8; font-weight: 700;">${escapeHtml(u.Handle)}</span>
-          <span style="color: #64748B;">•</span>
-          <span style="color: #94A3B8;">${escapeHtml(u.followersSummary)}</span>
+  if (!q) {
+    if (historyContainer) historyContainer.style.display = "flex";
+    if (resultsContainer) resultsContainer.style.display = "none";
+    if (emptyLabel) emptyLabel.style.display = "none";
+    renderSearchHistory();
+    return;
+  }
+
+  // Active query state
+  if (historyContainer) historyContainer.style.display = "none";
+  if (resultsContainer) resultsContainer.style.display = "flex";
+
+  const qLower = q.toLowerCase();
+  const cleanQ = normalizeSearchText(q);
+  const myUid = FirebaseService.currentUid || "";
+  let followedUids = new Set();
+  try {
+    followedUids = await FirebaseService.getFollowingUidsAsync();
+  } catch {
+    // ignore
+  }
+
+  // 1. EXACT ACCOUNT MATCH (case-insensitive)
+  const exactUser = state.searchAllUsers.find((u) => {
+    const uHandle = normalizeSearchText(u.Handle);
+    const uName = (u.DisplayName || "").trim().toLowerCase();
+    return uHandle === cleanQ || uName === qLower;
+  }) || null;
+
+  // 2. SIMILAR ACCOUNTS (ranked by fuzzy similarity score)
+  const scoredUsers = state.searchAllUsers
+    .filter((u) => !exactUser || u.Uid !== exactUser.Uid)
+    .map((u) => {
+      const handleScore = calculateFuzzyScore(u.Handle, cleanQ);
+      const nameScore = calculateFuzzyScore(u.DisplayName, q);
+      const score = Math.max(handleScore, nameScore);
+      return { user: u, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.user);
+
+  const hasExact = Boolean(exactUser);
+  const similarUsers = scoredUsers.slice(0, 10);
+  const totalAccountsFound = (hasExact ? 1 : 0) + similarUsers.length;
+
+  // Render Exact Match Account Card (with 8-video horizontal carousel)
+  if (exactContainer) {
+    if (exactUser) {
+      const isMe = myUid && exactUser.Uid === myUid;
+      const isFollowing = followedUids.has(exactUser.Uid);
+
+      // Find last 8 videos by this creator
+      let exactVideos = state.searchAllKlips.filter((k) => k.CreatorUid === exactUser.Uid);
+      exactVideos.sort((a, b) => (b.CreatedAtUnix || 0) - (a.CreatedAtUnix || 0));
+      const recent8 = exactVideos.slice(0, 8);
+
+      exactContainer.innerHTML = `
+        <div class="exact-account-card">
+          <div class="exact-account-top-row" id="exactAccountHeader">
+            <div class="user-row-avatar">
+              ${exactUser.hasAvatar
+                ? `<img src="${escapeHtml(exactUser.AvatarUrl)}" alt="" />`
+                : `<span>${escapeHtml(exactUser.Initials)}</span>`
+              }
+            </div>
+            <div class="search-account-meta">
+              <span class="search-account-name">${escapeHtml(exactUser.DisplayName)}</span>
+              <span class="search-account-handle">${escapeHtml(exactUser.Handle)}</span>
+            </div>
+            ${!isMe ? `
+              <button type="button" class="account-follow-btn ${isFollowing ? "following" : ""}" data-target-uid="${exactUser.Uid}">
+                ${isFollowing ? "Following" : "Follow"}
+              </button>
+            ` : ""}
+          </div>
+          <div class="creator-carousel-wrap">
+            <div class="creator-carousel-fog-left"></div>
+            <div class="creator-carousel-fog-right"></div>
+            <div class="creator-videos-hscroll" id="exactCreatorVideoTrack">
+              ${recent8.length > 0 ? recent8.map((v) => `
+                <div class="creator-video-hthumb" data-klip-id="${v.Id}">
+                  <img class="creator-video-himg" src="${escapeHtml(v.ThumbnailUrl || v.firstPhotoUrl || '')}" alt="" loading="lazy" />
+                  <div class="creator-video-hbadge">
+                    <span>▶</span>
+                    <span>${v.ViewsCount ?? 0}</span>
+                  </div>
+                </div>
+              `).join("") : `<div class="creator-no-videos-note">No clips posted yet</div>`}
+            </div>
+          </div>
         </div>
-      </div>
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9,6 L15,12 L9,18" />
-      </svg>
-    `;
-    row.addEventListener("click", () => {
-      if (!u.Uid) return;
-      pushSubpage("CreatorProfilePage", {
-        uid: u.Uid,
-        handle: u.Handle,
-        initials: u.Initials,
+      `;
+
+      exactContainer.querySelector("#exactAccountHeader")?.addEventListener("click", (e) => {
+        if (e.target.closest(".account-follow-btn")) return;
+        pushSubpage("CreatorProfilePage", {
+          uid: exactUser.Uid,
+          handle: exactUser.Handle,
+          initials: exactUser.Initials,
+        });
       });
+
+      exactContainer.querySelectorAll(".creator-video-hthumb").forEach((thumb) => {
+        thumb.addEventListener("click", () => {
+          const kId = thumb.dataset.klipId;
+          const selected = exactVideos.find((x) => x.Id === kId);
+          if (selected) {
+            pushSubpage("VideoDetailPage", {
+              playlist: exactVideos,
+              selected,
+            });
+          }
+        });
+      });
+
+      const followBtn = exactContainer.querySelector(".account-follow-btn");
+      if (followBtn) {
+        followBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (!FirebaseService.isLoggedIn) {
+            showAuthPrompt("Sign in to follow creators");
+            return;
+          }
+          const willFollow = !followBtn.classList.contains("following");
+          followBtn.classList.toggle("following", willFollow);
+          followBtn.textContent = willFollow ? "Following" : "Follow";
+          if (willFollow) {
+            await FirebaseService.followCreatorAsync(exactUser.Uid);
+            followedUids.add(exactUser.Uid);
+          } else {
+            await FirebaseService.unfollowCreatorAsync(exactUser.Uid);
+            followedUids.delete(exactUser.Uid);
+          }
+        });
+      }
+    } else {
+      exactContainer.innerHTML = "";
+    }
+  }
+
+  // Render Similar Accounts
+  if (accountsList) {
+    accountsList.innerHTML = "";
+    similarUsers.forEach((u) => {
+      const isMe = myUid && u.Uid === myUid;
+      const isFollowing = followedUids.has(u.Uid);
+      const card = document.createElement("div");
+      card.className = "search-account-card";
+      card.innerHTML = `
+        <div class="user-row-avatar">
+          ${u.hasAvatar
+            ? `<img src="${escapeHtml(u.AvatarUrl)}" alt="" />`
+            : `<span>${escapeHtml(u.Initials)}</span>`
+          }
+        </div>
+        <div class="search-account-meta">
+          <span class="search-account-name">${escapeHtml(u.DisplayName)}</span>
+          <span class="search-account-handle">${escapeHtml(u.Handle)}</span>
+        </div>
+        ${!isMe ? `
+          <button type="button" class="account-follow-btn ${isFollowing ? "following" : ""}">
+            ${isFollowing ? "Following" : "Follow"}
+          </button>
+        ` : `<div></div>`}
+      `;
+
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".account-follow-btn")) return;
+        if (!u.Uid) return;
+        pushSubpage("CreatorProfilePage", {
+          uid: u.Uid,
+          handle: u.Handle,
+          initials: u.Initials,
+        });
+      });
+
+      const followBtn = card.querySelector(".account-follow-btn");
+      if (followBtn) {
+        followBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (!FirebaseService.isLoggedIn) {
+            showAuthPrompt("Sign in to follow creators");
+            return;
+          }
+          const willFollow = !followBtn.classList.contains("following");
+          followBtn.classList.toggle("following", willFollow);
+          followBtn.textContent = willFollow ? "Following" : "Follow";
+          if (willFollow) {
+            await FirebaseService.followCreatorAsync(u.Uid);
+            followedUids.add(u.Uid);
+          } else {
+            await FirebaseService.unfollowCreatorAsync(u.Uid);
+            followedUids.delete(u.Uid);
+          }
+        });
+      }
+
+      accountsList.appendChild(card);
     });
-    accountsList.appendChild(row);
-  });
+  }
 
-  // Render Klips
-  renderKlipsThumbnailGrid(
-    klipsGrid,
-    state.searchFilteredKlips,
-    state.searchFilteredKlips,
-    true
-  );
+  if (accountsSection) {
+    accountsSection.style.display = totalAccountsFound > 0 ? "block" : "none";
+  }
 
-  if (state.searchActiveTab === "All") {
-    const showAccountsInAll = hasUsers && (Boolean(q) || !hasKlips);
-    accountsSection.style.display = showAccountsInAll ? "block" : "none";
-    accountsHeader.style.display = "block";
-    klipsSection.style.display = hasKlips ? "block" : "none";
-    klipsHeader.style.display = showAccountsInAll && hasKlips ? "block" : "none";
-    emptyLabel.style.display = !showAccountsInAll && !hasKlips ? "block" : "none";
-    emptyLabel.textContent = "No matching accounts or Klips found";
-  } else if (state.searchActiveTab === "Accounts") {
-    accountsSection.style.display = hasUsers ? "block" : "none";
-    accountsHeader.style.display = "none";
-    klipsSection.style.display = "none";
-    emptyLabel.style.display = !hasUsers ? "block" : "none";
-    emptyLabel.textContent = "No matching accounts found";
-  } else {
-    accountsSection.style.display = "none";
-    klipsSection.style.display = hasKlips ? "block" : "none";
-    klipsHeader.style.display = "none";
-    emptyLabel.style.display = !hasKlips ? "block" : "none";
-    emptyLabel.textContent = "No matching Klips found";
+  // 3. VIDEOS / KLIPS SEARCH & RANKING
+  // Exact match videos first, then fuzzy/similar match videos
+  const exactKlips = [];
+  const similarKlips = [];
+  const seenKlipIds = new Set();
+
+  for (const k of state.searchAllKlips) {
+    if (k.IsFemaleOnly && !isCurrentUserFemale()) continue;
+
+    const cap = (k.Caption || "").toLowerCase();
+    const ch = (k.CreatorHandle || "").toLowerCase();
+    const tags = (k.hashtags || "").toLowerCase();
+    const sound = (k.SoundTitle || "").toLowerCase();
+
+    // Exact query string in caption, hashtags, creator handle, or sound
+    if (
+      cap.includes(qLower) ||
+      tags.includes(qLower) ||
+      ch.includes(cleanQ) ||
+      sound.includes(qLower)
+    ) {
+      exactKlips.push(k);
+      seenKlipIds.add(k.Id);
+    } else {
+      // Fuzzy / similarity score
+      const score = Math.max(
+        calculateFuzzyScore(cap, q),
+        calculateFuzzyScore(tags, q),
+        calculateFuzzyScore(sound, q),
+        calculateFuzzyScore(ch, cleanQ)
+      );
+      if (score >= 40) {
+        similarKlips.push({ klip: k, score });
+      }
+    }
+  }
+
+  similarKlips.sort((a, b) => b.score - a.score);
+  const matchedKlips = [
+    ...exactKlips,
+    ...similarKlips.map((item) => item.klip).filter((k) => !seenKlipIds.has(k.Id)),
+  ].slice(0, 40); // 2 columns wide x up to 20 rows = 40 videos
+
+  state.searchFilteredKlips = matchedKlips;
+
+  if (klipsGrid) {
+    renderKlipsThumbnailGrid(
+      klipsGrid,
+      matchedKlips,
+      matchedKlips,
+      true
+    );
+  }
+
+  if (klipsSection) {
+    klipsSection.style.display = matchedKlips.length > 0 ? "block" : "none";
+  }
+
+  // Empty state handling
+  const hasAnyResults = totalAccountsFound > 0 || matchedKlips.length > 0;
+  if (emptyLabel) {
+    emptyLabel.style.display = !hasAnyResults ? "block" : "none";
+    emptyLabel.textContent = `No matching accounts or Klips found for "${q}"`;
   }
 }
 
@@ -6560,11 +6932,24 @@ function setupEventListeners() {
     searchClearBtn.style.display = val ? "block" : "none";
     if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => {
-      if (val && val.trim()) {
+      if (val && val.trim().length >= 3) {
+        addSearchHistory(val.trim());
         RecommendationService.recordSearch(val.trim());
       }
       applySearchFilter(val);
     }, 180);
+  });
+
+  searchEntry?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const val = searchEntry.value.trim();
+      if (val) {
+        addSearchHistory(val);
+        RecommendationService.recordSearch(val);
+        applySearchFilter(val);
+      }
+      searchEntry.blur();
+    }
   });
 
   searchClearBtn?.addEventListener("click", () => {
@@ -6574,16 +6959,6 @@ function setupEventListeners() {
     applySearchFilter("");
     searchEntry.focus();
   });
-
-  document
-    .getElementById("searchTabAll")
-    ?.addEventListener("click", () => setSearchActiveTab("All"));
-  document
-    .getElementById("searchTabAccounts")
-    ?.addEventListener("click", () => setSearchActiveTab("Accounts"));
-  document
-    .getElementById("searchTabKlips")
-    ?.addEventListener("click", () => setSearchActiveTab("Klips"));
 
   // Subscribe to Firebase service updates
   FirebaseService.onAuthStateChanged(() => {
