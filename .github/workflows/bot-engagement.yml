@@ -1,0 +1,16 @@
+name: Klip Bot Engagement Cron
+
+on:
+  schedule:
+    # Runs every 20 minutes automatically on GitHub cloud runners
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+jobs:
+  engage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Klip Bot Engagement
+        run: |
+          echo "Pinging Klip Bot Engagement endpoint..."
+          curl -s -X POST https://kliponline.com/api/bots/cron
