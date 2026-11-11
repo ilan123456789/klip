@@ -37,8 +37,9 @@ function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") || (navigator.maxTouchPoints > 1 && window.innerWidth < 800);
 }
 
-// Audio starts unmuted immediately by default across all devices
-const initialMobileMute = false;
+// On mobile (iOS / Android), browsers strictly enforce that videos must start muted to allow immediate autoplay.
+// Once the user touches or interacts with the screen, audio unmutes immediately.
+const isMobileInitial = isMobileDevice();
 
 // ==================== GLOBAL APP STATE ====================
 const state = {
@@ -46,9 +47,10 @@ const state = {
   navigationStack: [], // Stack of { pageId, params } for subpages
   activeFeedTab: "ForYou", // "Following" | "Female" | "ForYou"
   isTabTransitioning: false,
-  isMuted: false,
+  isMuted: isMobileInitial,
   userMuted: false,
-  autoMuted: false,
+  autoMuted: isMobileInitial,
+  hasUserInteracted: false,
   lastAutoUnmuteAt: 0,
 
   // MainPage Feed items
@@ -528,9 +530,10 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
     const videoEl = document.createElement("video");
     videoEl.className = "klip-video-element";
     videoEl.dataset.src = klip.VideoUrl;
-    if (klip.ThumbnailUrl) {
-      videoEl.poster = klip.ThumbnailUrl;
-    }
+    // NOTE: We deliberately do NOT set videoEl.poster = klip.ThumbnailUrl;
+    // because on iOS Safari, the native WebKit media controls engine renders an unstyled,
+    // duplicate native play button on top of any video with a poster. We already have placeholderEl
+    // which displays the thumbnail poster cleanly and fades out when video playback starts.
     videoEl.loop = true;
     videoEl.playsInline = true;
     videoEl.autoplay = true;
@@ -539,12 +542,14 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
     videoEl.setAttribute("webkit-playsinline", "true");
     videoEl.setAttribute("x5-playsinline", "true");
     videoEl.volume = 1.0;
-    // Videos start unmuted by default unless user has explicitly muted
-    const wantMuted = Boolean(state.userMuted);
+    // Videos start muted on mobile or if user muted, so iOS Safari autoplays instantly without blocking
+    const wantMuted = Boolean(state.userMuted || state.autoMuted);
     videoEl.defaultMuted = wantMuted;
     videoEl.muted = wantMuted;
     if (wantMuted) {
       videoEl.setAttribute("muted", "");
+    } else {
+      videoEl.removeAttribute("muted");
     }
 
     // For the very first slide, prime with preload="auto"; others wait for activateSlideInCarousel
@@ -1155,17 +1160,19 @@ function createFeedSlideElement(klip, contextType, slideIndex = 0) {
       const videoEl = slide.querySelector("video.klip-video-element");
       if (!videoEl) return;
 
-      // If this tap just unlocked browser auto-mute (or the video is still muted while playing),
+      // If this tap just unlocked browser auto-mute, or the video is currently playing muted,
       // unmute and keep playing with sound instead of pausing the video!
-      if (
-        Date.now() - (state.lastAutoUnmuteAt || 0) < 420 ||
-        (!videoEl.paused && (state.autoMuted || (videoEl.muted && !state.userMuted)))
-      ) {
+      const timeSinceUnlock = Date.now() - (state.lastAutoUnmuteAt || 0);
+      const isMutedPlayback = Boolean(state.autoMuted || (videoEl.muted && !state.userMuted));
+      if (timeSinceUnlock < 550 || isMutedPlayback) {
+        state.hasUserInteracted = true;
         state.autoMuted = false;
         state.userMuted = false;
+        state.lastAutoUnmuteAt = Date.now();
         updateSoundIcons();
         videoEl.defaultMuted = false;
         videoEl.muted = false;
+        videoEl.removeAttribute("muted");
         videoEl.volume = 1.0;
         klip.IsPausedByUser = false;
         klip.IsPaused = false;
@@ -1203,6 +1210,9 @@ function unlockAudioFromUserGesture(e) {
   if (e?.type === "keydown" && (e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta")) {
     return;
   }
+  state.hasUserInteracted = true;
+  state.lastAutoUnmuteAt = Date.now();
+
   gestureUnlockArmed = false;
   window.removeEventListener("pointerdown", unlockAudioFromUserGesture, true);
   window.removeEventListener("mousedown", unlockAudioFromUserGesture, true);
@@ -1212,18 +1222,15 @@ function unlockAudioFromUserGesture(e) {
   window.removeEventListener("keydown", unlockAudioFromUserGesture, true);
 
   if (!state.userMuted) {
-    const wasAutoMuted = state.autoMuted;
     state.autoMuted = false;
     updateSoundIcons();
-    if (wasAutoMuted) {
-      state.lastAutoUnmuteAt = Date.now();
-    }
     document
       .querySelectorAll('video.klip-video-element[data-active="1"]')
       .forEach((v) => {
         ensureAudioTracksEnabled(v);
         v.defaultMuted = false;
         v.muted = false;
+        v.removeAttribute("muted");
         v.volume = 1.0;
         const slide = v.closest(".feed-slide");
         const disc = slide?.querySelector(".rail-audio-disc");
@@ -1237,10 +1244,10 @@ function unlockAudioFromUserGesture(e) {
 function registerUserGestureUnlock() {
   if (gestureUnlockArmed) return;
   gestureUnlockArmed = true;
-  window.addEventListener("pointerdown", unlockAudioFromUserGesture, { capture: true });
-  window.addEventListener("mousedown", unlockAudioFromUserGesture, { capture: true });
-  window.addEventListener("touchstart", unlockAudioFromUserGesture, { capture: true });
-  window.addEventListener("touchend", unlockAudioFromUserGesture, { capture: true });
+  window.addEventListener("pointerdown", unlockAudioFromUserGesture, { capture: true, passive: true });
+  window.addEventListener("mousedown", unlockAudioFromUserGesture, { capture: true, passive: true });
+  window.addEventListener("touchstart", unlockAudioFromUserGesture, { capture: true, passive: true });
+  window.addEventListener("touchend", unlockAudioFromUserGesture, { capture: true, passive: true });
   window.addEventListener("click", unlockAudioFromUserGesture, { capture: true });
   window.addEventListener("keydown", unlockAudioFromUserGesture, { capture: true });
 }
@@ -1286,11 +1293,13 @@ async function playVideoSafely(videoEl, audioDisc) {
   const playOverlay = slide?.querySelector(".center-play-indicator");
   if (playOverlay) playOverlay.style.display = "none";
 
-  // Always try unmuted playback first unless the user explicitly clicked Mute
-  const wantMuted = Boolean(state.userMuted);
-  videoEl.defaultMuted = wantMuted;
-  videoEl.muted = wantMuted;
-  if (wantMuted) {
+  // On mobile before first gesture, or if user muted, start muted so iOS/Android allow immediate autoplay
+  const isMobile = isMobileDevice();
+  const mustStartMuted = Boolean(state.userMuted || (!state.hasUserInteracted && isMobile));
+
+  videoEl.defaultMuted = mustStartMuted;
+  videoEl.muted = mustStartMuted;
+  if (mustStartMuted) {
     videoEl.setAttribute("muted", "");
   } else {
     videoEl.removeAttribute("muted");
@@ -1302,13 +1311,15 @@ async function playVideoSafely(videoEl, audioDisc) {
       await playPromise;
     }
     if (videoEl._klipPlayCallId !== callId) return;
-    if (!wantMuted) {
+    if (!mustStartMuted) {
       state.autoMuted = false;
       updateSoundIcons();
       videoEl.defaultMuted = false;
       videoEl.muted = false;
       videoEl.removeAttribute("muted");
       videoEl.volume = 1.0;
+    } else {
+      registerUserGestureUnlock();
     }
     if (playOverlay) playOverlay.style.display = "none";
     audioDisc?.classList.add("spinning");
@@ -1322,6 +1333,8 @@ async function playVideoSafely(videoEl, audioDisc) {
     }
     // Browser blocked unmuted autoplay before first user gesture:
     // fall back to muted autoplay with explicit DOM attribute so it starts IMMEDIATELY (never start paused).
+    state.autoMuted = true;
+    updateSoundIcons();
     videoEl.defaultMuted = true;
     videoEl.muted = true;
     videoEl.setAttribute("muted", "");
@@ -4421,6 +4434,7 @@ async function onVideoDetailAppearing(playlist, selected, autoOpenComments = fal
       if (!targetVid.getAttribute("src") && !targetVid._hlsInstance && targetVid.dataset.src) {
         attachVideoToElement(targetVid, targetVid.dataset.src);
       }
+      state.hasUserInteracted = true;
       targetVid.defaultMuted = Boolean(state.userMuted);
       targetVid.muted = Boolean(state.userMuted);
       targetVid.volume = 1.0;
