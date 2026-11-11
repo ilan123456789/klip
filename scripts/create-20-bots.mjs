@@ -283,3 +283,4 @@ for (const followedUid of TARGET_FOLLOWS) {
 fs.writeFileSync("bot-accounts.json", JSON.stringify(createdBots, null, 2), "utf8");
 console.log(`\nAll done! Successfully created ${createdBots.length} bot accounts.`);
 console.log(`Saved credentials & metadata to bot-accounts.json`);
+
