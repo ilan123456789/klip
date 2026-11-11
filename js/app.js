@@ -7073,7 +7073,7 @@ function openLegalModal(type) {
       <h4>3. User Accounts</h4>
       <p>You are responsible for maintaining the confidentiality of your account credentials. All accounts created on Klip are strictly for personal use within the Klip platform.</p>
       <h4>4. Contact</h4>
-      <p>For questions or support, contact the Klip team at <a href="mailto:contact@kliponline.com" style="color: #38BDF8;">contact@kliponline.com</a> or via WhatsApp at <a href="https://wa.me/19024490799" target="_blank" style="color: #38BDF8;">+1 902 449 0799</a>.</p>
+      <p>For questions or support, contact the Klip team at <a href="mailto:supportatklip@gmail.com" style="color: #38BDF8;">supportatklip@gmail.com</a> or via WhatsApp at <a href="https://wa.me/19024490799" target="_blank" style="color: #38BDF8;">+1 902 449 0799</a>.</p>
     `;
   } else if (type === "privacy") {
     titleEl.textContent = "Privacy Policy";
@@ -7087,7 +7087,7 @@ function openLegalModal(type) {
       <h4>3. Data Protection</h4>
       <p>We do not sell, rent, or share your personal data with third-party advertisers or data brokers. All credentials are encrypted using industry-standard protocols.</p>
       <h4>4. Contact</h4>
-      <p>For privacy inquiries, contact us at <a href="mailto:contact@kliponline.com" style="color: #38BDF8;">contact@kliponline.com</a>.</p>
+      <p>For privacy inquiries, contact us at <a href="mailto:supportatklip@gmail.com" style="color: #38BDF8;">supportatklip@gmail.com</a>.</p>
     `;
   } else {
     titleEl.textContent = "About Klip";
