@@ -418,7 +418,12 @@ function propagateAvatarUpdate(avatarUrl) {
   document.querySelectorAll(`.comment-item[data-user-uid="${myUid}"]`).forEach((item) => {
     const box = item.querySelector(".comment-avatar-box");
     if (box) {
-      box.innerHTML = `<img class="comment-avatar-img" src="${escapeHtml(avatarUrl)}" alt="" />`;
+      if (avatarUrl) {
+        box.innerHTML = `<img class="comment-avatar-img" src="${escapeHtml(avatarUrl)}" alt="" />`;
+      } else {
+        const initials = FirebaseService.currentUser?.Initials || "KL";
+        box.innerHTML = `<span class="comment-avatar-initials">${escapeHtml(initials)}</span>`;
+      }
     }
   });
   if (Array.isArray(currentCommentsList)) {
@@ -6518,6 +6523,10 @@ function setupEventListeners() {
       saveBtn.textContent = "Saving...";
 
       await FirebaseService.saveUserProfileAsync(FirebaseService.currentUser);
+
+      if (FirebaseService.currentUser.AvatarUrl) {
+        propagateAvatarUpdate(FirebaseService.currentUser.AvatarUrl);
+      }
 
       saveBtn.disabled = false;
       saveBtn.textContent = "Save Changes";

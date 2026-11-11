@@ -126,8 +126,21 @@ export async function onRequestPost(context) {
     );
 
     const avatarUrl = body.avatarUrl || body.AvatarUrl;
-    if (avatarUrl) {
-      await execute(db, "UPDATE klips SET creator_avatar_url = ? WHERE creator_uid = ?;", avatarUrl, uid).catch(() => {});
+    if (avatarUrl !== undefined) {
+      await execute(db, "UPDATE klips SET creator_avatar_url = ? WHERE creator_uid = ?;", avatarUrl || "", uid).catch(() => {});
+      await execute(db, "UPDATE klip_comments SET user_avatar_url = ? WHERE user_uid = ?;", avatarUrl || "", uid).catch(() => {});
+    }
+
+    const handle = body.handle || body.Handle;
+    if (handle) {
+      await execute(db, "UPDATE klips SET creator_handle = ? WHERE creator_uid = ?;", handle, uid).catch(() => {});
+      await execute(db, "UPDATE klip_comments SET user_handle = ? WHERE user_uid = ?;", handle, uid).catch(() => {});
+    }
+
+    const initials = body.initials || body.Initials;
+    if (initials) {
+      await execute(db, "UPDATE klips SET creator_initials = ? WHERE creator_uid = ?;", initials, uid).catch(() => {});
+      await execute(db, "UPDATE klip_comments SET user_initials = ? WHERE user_uid = ?;", initials, uid).catch(() => {});
     }
 
     return new Response(JSON.stringify({ success: true, uid }), { status: 200, headers });

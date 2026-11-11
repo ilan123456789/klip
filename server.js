@@ -1125,6 +1125,23 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
           now,
         ]
       );
+
+      const avatarUrl = body.avatarUrl || body.AvatarUrl;
+      if (avatarUrl !== undefined) {
+        await queryD1("UPDATE klips SET creator_avatar_url = ? WHERE creator_uid = ?;", [avatarUrl || "", uid]).catch(() => {});
+        await queryD1("UPDATE klip_comments SET user_avatar_url = ? WHERE user_uid = ?;", [avatarUrl || "", uid]).catch(() => {});
+      }
+      const handle = body.handle || body.Handle;
+      if (handle) {
+        await queryD1("UPDATE klips SET creator_handle = ? WHERE creator_uid = ?;", [handle, uid]).catch(() => {});
+        await queryD1("UPDATE klip_comments SET user_handle = ? WHERE user_uid = ?;", [handle, uid]).catch(() => {});
+      }
+      const initials = body.initials || body.Initials;
+      if (initials) {
+        await queryD1("UPDATE klips SET creator_initials = ? WHERE creator_uid = ?;", [initials, uid]).catch(() => {});
+        await queryD1("UPDATE klip_comments SET user_initials = ? WHERE user_uid = ?;", [initials, uid]).catch(() => {});
+      }
+
       return sendJson(res, 200, { success: true, uid });
     } catch (err) {
       return sendJson(res, 500, { success: false, error: err.message });
@@ -1136,7 +1153,30 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
     try {
       const klipId = searchParams.get("klipId");
       if (!klipId) return sendJson(res, 400, { success: false, error: "Missing klipId" });
-      const rows = await queryD1("SELECT * FROM klip_comments WHERE klip_id = ? ORDER BY created_at ASC;", [klipId]);
+      const rows = await queryD1(
+        `SELECT 
+           c.id,
+           c.klip_id,
+           c.user_uid,
+           COALESCE(NULLIF(u.handle, ''), c.user_handle, '@user') AS user_handle,
+           COALESCE(NULLIF(u.initials, ''), c.user_initials, 'KL') AS user_initials,
+           COALESCE(
+             CASE WHEN u.is_male = 0 THEN '' ELSE NULLIF(u.avatar_url, '') END,
+             c.user_avatar_url,
+             ''
+           ) AS user_avatar_url,
+           c.text,
+           c.parent_comment_id,
+           c.reply_to_uid,
+           c.reply_to_handle,
+           c.likes_count,
+           c.created_at
+         FROM klip_comments c
+         LEFT JOIN users u ON u.uid = c.user_uid
+         WHERE c.klip_id = ?
+         ORDER BY c.created_at ASC;`,
+        [klipId]
+      );
       return sendJson(res, 200, { success: true, count: rows.length, comments: rows });
     } catch (err) {
       return sendJson(res, 500, { success: false, error: err.message });

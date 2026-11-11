@@ -27,7 +27,27 @@ export async function onRequestGet(context) {
 
     const comments = await queryAll(
       db,
-      "SELECT * FROM klip_comments WHERE klip_id = ? ORDER BY created_at ASC;",
+      `SELECT 
+         c.id,
+         c.klip_id,
+         c.user_uid,
+         COALESCE(NULLIF(u.handle, ''), c.user_handle, '@user') AS user_handle,
+         COALESCE(NULLIF(u.initials, ''), c.user_initials, 'KL') AS user_initials,
+         COALESCE(
+           CASE WHEN u.is_male = 0 THEN '' ELSE NULLIF(u.avatar_url, '') END,
+           c.user_avatar_url,
+           ''
+         ) AS user_avatar_url,
+         c.text,
+         c.parent_comment_id,
+         c.reply_to_uid,
+         c.reply_to_handle,
+         c.likes_count,
+         c.created_at
+       FROM klip_comments c
+       LEFT JOIN users u ON u.uid = c.user_uid
+       WHERE c.klip_id = ?
+       ORDER BY c.created_at ASC;`,
       klipId
     );
 
