@@ -1890,7 +1890,7 @@ class FirebaseServiceClass {
     const runFetch = async () => {
       // Prioritize Cloudflare D1 Feed API (Fast Edge SQL Query)
       try {
-        const cfFeedRes = await fetch(`/api/feed?tab=FYP&userUid=${encodeURIComponent(this.currentUid || "")}`);
+        const cfFeedRes = await fetch(`/api/feed?tab=FYP&limit=300&userUid=${encodeURIComponent(this.currentUid || "")}`);
         if (cfFeedRes.ok) {
           const feedData = await cfFeedRes.json();
           if (feedData && feedData.success && Array.isArray(feedData.klips)) {
@@ -1944,14 +1944,55 @@ class FirebaseServiceClass {
   async getCreatorKlipsAsync(creatorUid) {
     if (!creatorUid) return [];
     try {
+      const cfRes = await fetch(
+        `/api/feed?creatorUid=${encodeURIComponent(creatorUid)}&limit=500&userUid=${encodeURIComponent(this.currentUid || "")}`
+      );
+      if (cfRes.ok) {
+        const feedData = await cfRes.json();
+        if (feedData && feedData.success && Array.isArray(feedData.klips)) {
+          const mapped = feedData.klips
+            .map((k) => createKlipVideo(k))
+            .filter((k) => k.isVideoPost || k.isPhotoPost);
+          mapped.sort((a, b) => (b.CreatedAtUnix || 0) - (a.CreatedAtUnix || 0));
+          return mapped;
+        }
+      }
+    } catch (err) {
+      console.warn("[FirebaseService] getCreatorKlipsAsync API failed, falling back to cache:", err);
+    }
+
+    try {
       const all = await this.getFeedKlipsAsync(false);
       const list = (all || []).filter((k) => k.CreatorUid === creatorUid);
       list.sort((a, b) => (b.CreatedAtUnix || 0) - (a.CreatedAtUnix || 0));
       return list;
     } catch (err) {
-      console.warn("[FirebaseService] getCreatorKlipsAsync failed:", err);
+      console.warn("[FirebaseService] getCreatorKlipsAsync fallback failed:", err);
       return [];
     }
+  }
+
+  async getSavedKlipsAsync() {
+    if (!this.currentUid) return [];
+    try {
+      const cfRes = await fetch(
+        `/api/feed?tab=SAVED&userUid=${encodeURIComponent(this.currentUid)}&limit=500`
+      );
+      if (cfRes.ok) {
+        const feedData = await cfRes.json();
+        if (feedData && feedData.success && Array.isArray(feedData.klips)) {
+          const mapped = feedData.klips
+            .map((k) => createKlipVideo(k))
+            .filter((k) => k.isVideoPost || k.isPhotoPost);
+          mapped.sort((a, b) => (b.CreatedAtUnix || 0) - (a.CreatedAtUnix || 0));
+          return mapped;
+        }
+      }
+    } catch (err) {
+      console.warn("[FirebaseService] getSavedKlipsAsync failed:", err);
+    }
+    const all = this._cachedFeedKlips || [];
+    return all.filter((k) => k.IsBookmarked);
   }
 
   async saveKlipThumbnailAsync(klipId, thumbnailUrl) {

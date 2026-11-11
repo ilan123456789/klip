@@ -1012,10 +1012,12 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
   // 4. Feed API backed by D1
   if (pathname === "/api/feed" && req.method === "GET") {
     try {
-      const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+      const creatorUid = searchParams.get("creatorUid") || "";
+      const maxLimit = creatorUid ? 1000 : 500;
+      const defaultLimit = creatorUid ? "500" : "200";
+      const limit = Math.min(maxLimit, Math.max(1, parseInt(searchParams.get("limit") || defaultLimit, 10)));
       const tab = (searchParams.get("tab") || "FYP").toUpperCase();
       const userUid = searchParams.get("userUid") || "";
-      const creatorUid = searchParams.get("creatorUid") || "";
       const tag = searchParams.get("tag") || "";
 
       let sql = `
@@ -1036,6 +1038,9 @@ async function handleStreamRoutes(req, res, pathname, searchParams) {
       if (creatorUid) {
         sql += " AND k.creator_uid = ? ORDER BY k.created_at DESC LIMIT ?";
         params.push(creatorUid, limit);
+      } else if (tab === "SAVED" && userUid) {
+        sql += ` AND k.id IN (SELECT klip_id FROM klip_bookmarks WHERE user_uid = ?) ORDER BY k.created_at DESC LIMIT ?`;
+        params.push(userUid, limit);
       } else if (tab === "FEMALE") {
         sql += " AND k.is_female_only = 1 ORDER BY k.created_at DESC LIMIT ?";
         params.push(limit);

@@ -2956,12 +2956,18 @@ async function loadLoggedInProfileAsync() {
   if (FirebaseService.currentUser) {
     bindProfileUI(FirebaseService.currentUser);
   }
-  bindProfileKlipsGrid(FirebaseService.getCachedKlipsSnapshot());
+  if (state.userKlips && state.userKlips.length > 0) {
+    bindProfileKlipsGrid(state.showingSaved ? state.savedKlips : state.userKlips);
+  }
 
-  const [profile, klips] = await Promise.all([
+  const [profile, myKlips, savedKlips] = await Promise.all([
     FirebaseService.getUserProfileAsync(FirebaseService.currentUid, true),
-    FirebaseService.getFeedKlipsAsync(),
+    FirebaseService.getCreatorKlipsAsync(FirebaseService.currentUid),
+    FirebaseService.getSavedKlipsAsync(),
   ]);
+
+  state.userKlips = myKlips || [];
+  state.savedKlips = savedKlips || [];
 
   let resolvedProfile = profile;
   if (!resolvedProfile && FirebaseService.currentUser) {
@@ -2974,7 +2980,7 @@ async function loadLoggedInProfileAsync() {
     updateSidebarUserCard();
   }
 
-  bindProfileKlipsGrid(klips);
+  bindProfileKlipsGrid(state.showingSaved ? state.savedKlips : state.userKlips);
 }
 
 function bindProfileUI(profile) {
@@ -3123,11 +3129,15 @@ function renderKlipsThumbnailGrid(gridEl, klipsList, playlistSource, showCreator
   });
 }
 
-function bindProfileKlipsGrid(allKlips) {
+function bindProfileKlipsGrid(sourceList) {
   const isFemale = isCurrentUserFemale();
+  const list = Array.isArray(sourceList)
+    ? sourceList
+    : (state.showingSaved ? state.savedKlips : state.userKlips) || [];
+
   const filtered = state.showingSaved
-    ? allKlips.filter((k) => k.IsBookmarked && (!k.IsFemaleOnly || isFemale))
-    : allKlips.filter((k) => k.CreatorUid === FirebaseService.currentUid);
+    ? list.filter((k) => k && (!k.IsFemaleOnly || isFemale))
+    : list.filter((k) => k && (!k.IsFemaleOnly || isFemale || k.CreatorUid === FirebaseService.currentUid));
 
   state.profileDisplayedKlips = filtered;
 
@@ -6225,20 +6235,26 @@ function setupEventListeners() {
     }
     });
 
-  document.getElementById("myKlipsTabCol")?.addEventListener("click", () => {
+  document.getElementById("myKlipsTabCol")?.addEventListener("click", async () => {
     if (!state.showingSaved) return;
     state.showingSaved = false;
     document.getElementById("myKlipsTabCol").classList.add("active");
     document.getElementById("savedKlipsTabCol").classList.remove("active");
-    bindProfileKlipsGrid(FirebaseService.getCachedKlipsSnapshot());
+    if (!state.userKlips || state.userKlips.length === 0) {
+      state.userKlips = (await FirebaseService.getCreatorKlipsAsync(FirebaseService.currentUid)) || [];
+    }
+    bindProfileKlipsGrid(state.userKlips);
   });
 
-  document.getElementById("savedKlipsTabCol")?.addEventListener("click", () => {
+  document.getElementById("savedKlipsTabCol")?.addEventListener("click", async () => {
     if (state.showingSaved) return;
     state.showingSaved = true;
     document.getElementById("savedKlipsTabCol").classList.add("active");
     document.getElementById("myKlipsTabCol").classList.remove("active");
-    bindProfileKlipsGrid(FirebaseService.getCachedKlipsSnapshot());
+    if (!state.savedKlips || state.savedKlips.length === 0) {
+      state.savedKlips = (await FirebaseService.getSavedKlipsAsync()) || [];
+    }
+    bindProfileKlipsGrid(state.savedKlips);
   });
 
   document
