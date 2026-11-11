@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "npx --yes vite build && node -e \"fs.cpSync('assets', 'dist/assets', {recursive: true}); fs.mkdirSync('dist/js', {recursive: true}); fs.copyFileSync('js/hls.min.js', 'dist/js/hls.min.js'); fs.copyFileSync('_headers', 'dist/_headers'); if (fs.existsSync('robots.txt')) fs.copyFileSync('robots.txt', 'dist/robots.txt');\"",
+    "build": "npx --yes vite build && node -e \"fs.cpSync('assets', 'dist/assets', {recursive: true}); fs.mkdirSync('dist/js', {recursive: true}); fs.copyFileSync('js/hls.min.js', 'dist/js/hls.min.js'); fs.copyFileSync('_headers', 'dist/_headers'); if (fs.existsSync('robots.txt')) fs.copyFileSync('robots.txt', 'dist/robots.txt'); if (fs.existsSync('privacy.html')) fs.copyFileSync('privacy.html', 'dist/privacy.html'); if (fs.existsSync('terms.html')) fs.copyFileSync('terms.html', 'dist/terms.html');\"",
     "deploy": "npm run build && npx wrangler pages deploy dist --project-name klip",
     "bot:boost": "node -e \"fetch('https://kliponline.com/api/bots/cron', {method:'POST'}).then(r=>r.json()).then(console.log)\""
   }

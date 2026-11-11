@@ -21,3 +21,4 @@ console.log("Rabbi portrait results:", rabbi.slice(0, 5));
 
 const kotel = await searchCommons("Western wall praying man");
 console.log("Western wall praying results:", kotel.slice(0, 5));
+

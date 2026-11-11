@@ -135,3 +135,4 @@ for (let i = 0; i < bots.length; i++) {
 
 fs.writeFileSync("bot-accounts.json", JSON.stringify(bots, null, 2), "utf8");
 console.log("\nAll bot avatars successfully updated to authentic Jewish imagery!");
+
