@@ -17,6 +17,7 @@ export async function onRequestGet(context) {
     const db = getDb(context.env);
     const url = new URL(context.request.url);
     const klipId = url.searchParams.get("klipId");
+    const userUid = url.searchParams.get("userUid") || "";
 
     if (!klipId) {
       return new Response(JSON.stringify({ success: false, error: "Missing klipId." }), {
@@ -42,12 +43,15 @@ export async function onRequestGet(context) {
          c.parent_comment_id,
          c.reply_to_uid,
          c.reply_to_handle,
-         c.likes_count,
+         COALESCE((SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id), c.likes_count, 0) AS likes_count,
+         CASE WHEN ? != '' AND EXISTS (SELECT 1 FROM comment_likes cl2 WHERE cl2.comment_id = c.id AND cl2.user_uid = ?) THEN 1 ELSE 0 END AS is_liked,
          c.created_at
        FROM klip_comments c
        LEFT JOIN users u ON u.uid = c.user_uid
        WHERE c.klip_id = ?
        ORDER BY c.created_at ASC;`,
+      userUid,
+      userUid,
       klipId
     );
 
@@ -78,21 +82,35 @@ export async function onRequestPost(context) {
 
     if (action === "like_comment") {
       const commentId = body.commentId || id;
-      await execute(
-        db,
-        "INSERT OR IGNORE INTO comment_likes (user_uid, comment_id, created_at) VALUES (?, ?, ?);",
-        userUid,
-        commentId,
-        now
-      );
-      await execute(db, "UPDATE klip_comments SET likes_count = likes_count + 1 WHERE id = ?;", commentId);
+      if (userUid && commentId) {
+        await execute(
+          db,
+          "INSERT OR IGNORE INTO comment_likes (user_uid, comment_id, created_at) VALUES (?, ?, ?);",
+          userUid,
+          commentId,
+          now
+        );
+        await execute(
+          db,
+          "UPDATE klip_comments SET likes_count = (SELECT COUNT(*) FROM comment_likes WHERE comment_id = ?) WHERE id = ?;",
+          commentId,
+          commentId
+        );
+      }
       return new Response(JSON.stringify({ success: true, action: "like_comment", commentId }), { status: 200, headers });
     }
 
     if (action === "unlike_comment") {
       const commentId = body.commentId || id;
-      await execute(db, "DELETE FROM comment_likes WHERE user_uid = ? AND comment_id = ?;", userUid, commentId);
-      await execute(db, "UPDATE klip_comments SET likes_count = MAX(0, likes_count - 1) WHERE id = ?;", commentId);
+      if (userUid && commentId) {
+        await execute(db, "DELETE FROM comment_likes WHERE user_uid = ? AND comment_id = ?;", userUid, commentId);
+        await execute(
+          db,
+          "UPDATE klip_comments SET likes_count = (SELECT COUNT(*) FROM comment_likes WHERE comment_id = ?) WHERE id = ?;",
+          commentId,
+          commentId
+        );
+      }
       return new Response(JSON.stringify({ success: true, action: "unlike_comment", commentId }), { status: 200, headers });
     }
 

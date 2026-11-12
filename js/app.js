@@ -7625,7 +7625,10 @@ async function initApp() {
 
   // Start session restoration and initial feed load in parallel so auth refresh
   // never delays the first video from loading!
-  const restorePromise = FirebaseService.tryRestoreSessionAsync().then(() => {
+  const restorePromise = FirebaseService.tryRestoreSessionAsync().then(async () => {
+    if (FirebaseService.currentUid) {
+      await FirebaseService.getUserProfileAsync(FirebaseService.currentUid, true).catch(() => {});
+    }
     updateSidebarUserCard();
     syncNavigationUI();
     refreshInboxBadgeCountAsync();

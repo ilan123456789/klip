@@ -1358,6 +1358,9 @@ class FirebaseServiceClass {
 
   async uploadAndCreateKlipAsync(videoFile, caption, watermarkedBlob = null, soundMeta = null, onProgress = null) {
     if (!this.currentUser || !this.currentUid) {
+      await this.tryRestoreSessionAsync();
+    }
+    if (!this.currentUser || !this.currentUid) {
       return { success: false, error: "Please sign in first." };
     }
 
@@ -1381,7 +1384,11 @@ class FirebaseServiceClass {
         error: "Video file exceeds maximum allowable size of 500 MB.",
       };
     }
-    if (videoFile && !videoFile.type.startsWith("video/")) {
+    const isVideoType =
+      !videoFile ||
+      (videoFile.type && videoFile.type.startsWith("video/")) ||
+      /\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(videoFile.name || "");
+    if (videoFile && !isVideoType) {
       return {
         success: false,
         error: "Selected file must be a valid video.",
@@ -1569,7 +1576,7 @@ class FirebaseServiceClass {
       };
 
       // Save to Cloudflare D1
-      fetch("/api/klip", {
+      const klipRes = await fetch("/api/klip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1581,6 +1588,11 @@ class FirebaseServiceClass {
           creatorAvatarUrl: this.currentUser.AvatarUrl || "",
         }),
       });
+
+      if (!klipRes.ok) {
+        const errJson = await klipRes.json().catch(() => ({}));
+        throw new Error(errJson.error || `Failed to save klip record (${klipRes.status})`);
+      }
 
       this._cachedFeedKlips = null;
       this._emitFeedUpdated();
@@ -2483,14 +2495,36 @@ class FirebaseServiceClass {
     }
     return set;
   }
-      // ==================== COMMENTS API (Exact port of Services/FirebaseService.cs) ====================
+
+  _getLikedCommentIds() {
+    if (!this.currentUid) return new Set();
+    try {
+      const raw = localStorage.getItem(`liked_comments_${this.currentUid}`);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch {}
+    return new Set();
+  }
+
+  _setCommentLikedLocally(commentId, isLiked) {
+    if (!this.currentUid || !commentId) return;
+    try {
+      const set = this._getLikedCommentIds();
+      if (isLiked) set.add(commentId);
+      else set.delete(commentId);
+      localStorage.setItem(`liked_comments_${this.currentUid}`, JSON.stringify([...set]));
+    } catch {}
+  }
+
+  // ==================== COMMENTS API (Exact port of Services/FirebaseService.cs) ====================
   async getCommentsAsync(klipId) {
     if (!klipId) return [];
     try {
-      const cfRes = await fetch(`/api/comments?klipId=${encodeURIComponent(klipId)}`);
+      const uidParam = this.currentUid ? `&userUid=${encodeURIComponent(this.currentUid)}` : "";
+      const cfRes = await fetch(`/api/comments?klipId=${encodeURIComponent(klipId)}${uidParam}`);
       if (cfRes.ok) {
         const cfData = await cfRes.json();
         if (cfData && cfData.success && Array.isArray(cfData.comments)) {
+          const localLiked = this._getLikedCommentIds();
           return cfData.comments.map((c) => ({
             Id: c.id,
             KlipId: c.klip_id,
@@ -2504,7 +2538,7 @@ class FirebaseServiceClass {
             ReplyToHandle: c.reply_to_handle,
             LikesCount: Number(c.likes_count) || 0,
             CreatedAtUnix: Number(c.created_at) || 0,
-            IsLiked: false,
+            IsLiked: Boolean(c.is_liked || (c.id && localLiked.has(c.id))),
           }));
         }
       }
@@ -2517,6 +2551,9 @@ class FirebaseServiceClass {
   async setCommentLikeAsync(comment, isLiked) {
     if (!comment || !comment.Id || !comment.KlipId) return;
     if (!this.isLoggedIn || !this.currentUid) return;
+
+    comment.IsLiked = isLiked;
+    this._setCommentLikedLocally(comment.Id, isLiked);
 
     try {
       await fetch("/api/comments", {

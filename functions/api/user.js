@@ -20,7 +20,9 @@ export async function onRequestGet(context) {
 
     const userSelectSql = `
       SELECT u.*,
-        MAX(u.shkoyach_count, COALESCE((SELECT SUM(likes_count) FROM klips WHERE creator_uid = u.uid), 0)) AS shkoyach_count
+        MAX(u.shkoyach_count, COALESCE((SELECT SUM(likes_count) FROM klips WHERE creator_uid = u.uid), 0)) AS shkoyach_count,
+        MAX(u.followers_count, COALESCE((SELECT COUNT(*) FROM follows WHERE followed_uid = u.uid), 0)) AS followers_count,
+        MAX(u.following_count, COALESCE((SELECT COUNT(*) FROM follows WHERE follower_uid = u.uid), 0)) AS following_count
       FROM users u
     `;
 
