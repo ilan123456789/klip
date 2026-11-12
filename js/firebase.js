@@ -1356,6 +1356,69 @@ class FirebaseServiceClass {
     }
   }
 
+  async _uploadTusChunksAsync(uploadURL, videoFile, onProgress = null) {
+    const total = videoFile.size;
+    let offset = 0;
+    // Cloudflare Stream chunk size MUST be a multiple of 256 KiB (262,144 bytes).
+    // 5MB = 5 * 1024 * 1024 = 5,242,880 bytes (exactly 20 * 256 KiB).
+    const CHUNK_SIZE = 5 * 1024 * 1024;
+
+    while (offset < total) {
+      const nextOffset = Math.min(offset + CHUNK_SIZE, total);
+      const chunk = videoFile.slice(offset, nextOffset);
+
+      let retries = 3;
+      let ok = false;
+      let lastErr = null;
+
+      while (retries > 0 && !ok) {
+        try {
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("PATCH", uploadURL, true);
+            xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+            xhr.setRequestHeader("Upload-Offset", String(offset));
+            xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
+
+            xhr.upload.onprogress = (evt) => {
+              if (evt.lengthComputable && typeof onProgress === "function") {
+                const currentTotal = offset + evt.loaded;
+                const pct = Math.min(94, Math.round((currentTotal / total) * 92));
+                onProgress(pct);
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status === 204 || (xhr.status >= 200 && xhr.status < 300)) {
+                const resOffset = xhr.getResponseHeader("Upload-Offset");
+                offset = resOffset ? parseInt(resOffset, 10) : nextOffset;
+                ok = true;
+                resolve();
+              } else {
+                reject(new Error(`TUS chunk failed with HTTP ${xhr.status}`));
+              }
+            };
+
+            xhr.onerror = () => reject(new Error("TUS chunk network failure"));
+            xhr.ontimeout = () => reject(new Error("TUS chunk timeout"));
+            xhr.timeout = 120000;
+            xhr.send(chunk);
+          });
+        } catch (err) {
+          lastErr = err;
+          retries--;
+          if (retries > 0) {
+            await new Promise((r) => setTimeout(r, 1500));
+          }
+        }
+      }
+
+      if (!ok) {
+        throw lastErr || new Error("Failed to complete TUS chunk upload.");
+      }
+    }
+  }
+
   async uploadAndCreateKlipAsync(videoFile, caption, watermarkedBlob = null, soundMeta = null, onProgress = null) {
     if (!this.currentUser || !this.currentUid) {
       await this.tryRestoreSessionAsync();
@@ -1406,6 +1469,14 @@ class FirebaseServiceClass {
       let playbackStatus = "ready";
 
       if (videoFile) {
+        let currentProgress = 5;
+        const reportProgress = (pct) => {
+          currentProgress = Math.max(currentProgress, Math.min(95, Math.round(pct)));
+          if (typeof onProgress === "function") {
+            onProgress(currentProgress);
+          }
+        };
+
         let cfUploaded = false;
         try {
           // 1. Attempt Cloudflare Stream Direct Creator Upload via secure backend
@@ -1415,31 +1486,39 @@ class FirebaseServiceClass {
             body: JSON.stringify({
               creatorUid: this.currentUid,
               fileName: videoFile.name || `klip_${klipId}.mp4`,
+              fileSize: videoFile.size || 0,
             }),
           });
 
           if (initRes.ok) {
             const cfData = await initRes.json();
             if (cfData && cfData.uploadURL && cfData.uid) {
-              const form = new FormData();
-              form.append("file", videoFile, videoFile.name || "video.mp4");
+              if (cfData.uploadType === "tus") {
+                // High-performance chunked resumable upload
+                await this._uploadTusChunksAsync(cfData.uploadURL, videoFile, (p) => reportProgress(p));
+              } else {
+                // Standard form POST upload
+                const form = new FormData();
+                form.append("file", videoFile, videoFile.name || "video.mp4");
 
-              await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", cfData.uploadURL, true);
-                xhr.upload.onprogress = (evt) => {
-                  if (evt.lengthComputable && typeof onProgress === "function") {
-                    onProgress(Math.min(95, Math.round((evt.loaded / evt.total) * 90)));
-                  }
-                };
-                xhr.onload = () => {
-                  if (xhr.status >= 200 && xhr.status < 300) resolve();
-                  else reject(new Error(`Upload error (HTTP ${xhr.status})`));
-                };
-                xhr.onerror = () => reject(new Error("Upload network failure"));
-                xhr.send(form);
-              });
+                await new Promise((resolve, reject) => {
+                  const xhr = new XMLHttpRequest();
+                  xhr.open("POST", cfData.uploadURL, true);
+                  xhr.upload.onprogress = (evt) => {
+                    if (evt.lengthComputable) {
+                      reportProgress((evt.loaded / evt.total) * 92);
+                    }
+                  };
+                  xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) resolve();
+                    else reject(new Error(`Upload error (HTTP ${xhr.status})`));
+                  };
+                  xhr.onerror = () => reject(new Error("Upload network failure"));
+                  xhr.send(form);
+                });
+              }
 
+              reportProgress(95);
               cfUploaded = true;
               videoProvider = "cloudflare";
               cloudflareVideoId = cfData.uid;
@@ -1466,9 +1545,7 @@ class FirebaseServiceClass {
             videoFile.type || "video/mp4",
             videoFile,
             (pct) => {
-              if (typeof onProgress === "function") {
-                onProgress(Math.min(95, Math.round(pct * 0.9)));
-              }
+              reportProgress(pct);
             }
           );
 
@@ -1479,6 +1556,7 @@ class FirebaseServiceClass {
             };
           }
 
+          reportProgress(95);
           videoProvider = "cloudflare";
           playbackUrl = videoUrl;
 

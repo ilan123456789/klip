@@ -24,9 +24,16 @@ export async function onRequestPost(context) {
 
     const r2 = getR2(context.env);
     const contentType = context.request.headers.get("content-type") || "application/octet-stream";
-    const data = await context.request.arrayBuffer();
+    const bodyStream = context.request.body;
 
-    await uploadObject(r2, objectName, data, contentType);
+    if (!bodyStream) {
+      return new Response(JSON.stringify({ success: false, error: "Empty request body." }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    await uploadObject(r2, objectName, bodyStream, contentType);
     const mediaUrl = getPublicMediaUrl(objectName);
 
     return new Response(

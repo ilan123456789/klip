@@ -26,7 +26,54 @@ export async function onRequestPost(context) {
     const uid = body.creatorUid || "anonymous";
     const name = (body.name || body.fileName || "Klip Video").slice(0, 100);
     const maxDurationSeconds = Math.min(Number(body.maxDurationSeconds) || 1800, 3600);
+    const fileSize = Number(body.fileSize) || 0;
 
+    // 1. Try Cloudflare Stream Resumable TUS Direct Upload if fileSize is specified
+    if (fileSize > 0) {
+      try {
+        const toB64 = (s) => btoa(unescape(encodeURIComponent(String(s || ""))));
+        const metaPairs = [
+          `name ${toB64(name)}`,
+          `creatorUid ${toB64(uid)}`,
+          `maxDurationSeconds ${toB64(maxDurationSeconds)}`,
+        ];
+
+        const tusRes = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream?direct_user=true`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              "Tus-Resumable": "1.0.0",
+              "Upload-Length": String(fileSize),
+              "Upload-Metadata": metaPairs.join(","),
+            },
+          }
+        );
+
+        if (tusRes.status === 201) {
+          const uploadURL = tusRes.headers.get("Location");
+          const videoUid = tusRes.headers.get("Stream-Media-ID") || tusRes.headers.get("stream-media-id");
+          if (uploadURL && videoUid) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                uploadType: "tus",
+                uploadURL,
+                uid: videoUid,
+                playbackUrl: `https://${customerSubdomain}/${videoUid}/manifest/video.m3u8`,
+                thumbnailUrl: `https://${customerSubdomain}/${videoUid}/thumbnails/thumbnail.jpg`,
+              }),
+              { status: 200, headers }
+            );
+          }
+        }
+      } catch (tusErr) {
+        console.warn("[Stream API] TUS initialization fallback:", tusErr);
+      }
+    }
+
+    // 2. Standard Basic Form Direct Upload
     const cfRes = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/direct_upload`,
       {
@@ -62,6 +109,7 @@ export async function onRequestPost(context) {
     return new Response(
       JSON.stringify({
         success: true,
+        uploadType: "form",
         uploadURL,
         uid: videoUid,
         playbackUrl: `https://${customerSubdomain}/${videoUid}/manifest/video.m3u8`,
